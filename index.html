@@ -1,0 +1,160 @@
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=400, initial-scale=1.0">
+    <title>Location-Based Sounds</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.rawgit.com/localForage/localForage/4ce19202/dist/localforage.min.js"></script>
+    <script src="uniqueMe.js"></script>
+    <!--script src="Tone.js"></script-->
+    <script src="sound2.js"></script>
+</head>
+
+<body>
+    <h2>CLIENT</h2>
+    <!--div id="mapid"></div-->
+    <div id="unique">unique id: </div>
+    <!--button onclick="playIt(0, 'start')">start 1</button>
+    <button onclick="playIt(0, 'stop')">stop 1</button>
+    <button onclick="playIt(1, 'start')">start 2</button>
+    <button onclick="playIt(1, 'stop')">stop 2</button>
+    <button onclick="playIt(2, 'start')">start 3</button>
+    <button onclick="playIt(2, 'stop')">stop 3</button>
+    <button onclick="playIt(3, 'start')">start 4</button>
+    <button onclick="playIt(3, 'stop')">stop 4</button-->
+    <h4>Itt láthatók a parancsok a vezérlőtől</h4>
+    <div id="net">net messages</div>
+    <h4>Zöldre vált ha letöltötte az adott fájlt</h4>
+    <div class="row">
+        <div class="block" id="bl0">1</div>
+        <div class="block" id="bl1">2</div>
+        <div class="block" id="bl2">3</div>
+        <div class="block" id="bl3">4</div>
+    </div>
+    <h4>Jelenlegi pozíció</h4>
+    <div id="demo"></div>
+    <div id="watcher">watchxxxer</div>
+    <div id="closeTo">close to</div>
+    <audio id="myaudio" preload="auto" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+    <div id="progress">
+        <div id="bar"></div>
+    </div>
+    <button class="full" id="start" onclick="startSound()">Hangok engedélyezése</button>
+</body>
+
+<script>
+    var role = 'client';
+    ////////////////////////////////////////////// WebSocket
+    var HOST = location.origin.replace(/^http/, 'ws');
+    var ws = new WebSocket(HOST);
+
+    var uniqueId;
+
+    ws.onopen = function (event) {
+        uniqueId = getId(handShake)
+        document.getElementById('net').innerHTML = 'websocket connection opened ';
+    };
+
+    ws.onmessage = function (event) {
+        c = JSON.parse(event.data);
+        if (c.control) {
+            playIt(c.control.ind, c.control.func);
+        } else if (c.timeupdate) {
+            myAudio.currentTime = c.timeupdate;
+        } else if (c.time) {
+            state = c;
+            setupSoundState();
+        }
+        console.log(event.data);
+        net.innerHTML = event.data;
+    }
+
+    function setCoords(coord) {
+        temp = {
+            'latitude': coord.latitude,
+            'longitude': coord.longitude,
+        }
+        ws.send(JSON.stringify(temp));
+    }
+
+    function handShake(id) {
+        message = {
+            'new': {
+                'type': role,
+                'id': id
+            }
+        }
+        ws.send(JSON.stringify(message));
+        unique.innerHTML += id;
+    }
+    ///////////////////////////////////////////// Geolocation, Sound
+    var x = document.getElementById("demo");
+    var watcher = document.getElementById('watcher');
+    var closeTo = document.getElementById('closeTo');
+    var myAudio = document.getElementById('myaudio');
+    var coords;
+
+    function startSound() {
+        //Tone.start();
+        document.getElementById('start').remove();
+        if (!state.playing)
+            preparePlayer('0');
+        else {
+            setupSoundState();
+        }
+    }
+
+    var state = {
+        'index': -1,
+        'time': -1,
+        'playing': false
+    }
+
+    function setupSoundState() {
+        preparePlayer(state.index).then(_ => {
+            myAudio.currentTime = state.time;
+            if (state.playing)
+                doPlay('start');
+        })
+    }
+
+    myAudio.addEventListener('timeupdate', function () {
+        //sets the percentage
+        bar.style.width = parseInt(((myAudio.currentTime / myAudio.duration) * 100), 10) + "%";
+    });
+
+    //////////////////// LOCATION
+    function getLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(showPosition);
+        } else {
+            x.innerHTML = "Geolocation is not supported by this browser.";
+        }
+    }
+
+    function showPosition(position) {
+        coords = position.coords;
+        setCoords(coords);
+        x.innerHTML = "Latitude: " + position.coords.latitude +
+            "<br>Longitude: " + position.coords.longitude;
+    }
+
+    getLocation();
+
+    /*function createFullButton(target) {
+        if (!document.getElementById(target.music)) {
+            bt = document.createElement('button');
+            bt.className = 'full';
+            bt.id = target.music;
+            bt.appendChild(document.createTextNode(target.text + ' ' + target.func));
+            bt.onclick = function () {
+                playIt(target.music, target.func);
+                bt.remove();
+            }
+            document.body.appendChild(bt);
+            preparePlayer(parseInt(target.music));
+        }
+    }*/
+</script>
+<script src="geoloc.js"></script>

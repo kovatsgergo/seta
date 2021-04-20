@@ -1,0 +1,23 @@
+A-terv
+
+Van egy vezérlő és egy felhasználó oldal
+
+- Végig kell net (de nem jelentős a forgalom)
+
+
+MI VAN, HA VALAKI MENET KÖZBEN KAPCSOLÓDIK LE????
+- bekapcsolódáskor kér egy szinkronizáló jelet
+
+
+4db track, amit kézzel indít el a VEZÉRLŐ
+
+
+B-terv
+
+1. 	Columbo-szobornál NAGY GOMB elindul
+
+2.	2-es villamos Kossuth tér megállójában NAGY GOMB 47.50578457500719, 19.0471017290587
+
+3.	Mikszáth tér szükőkút NAGY GOMB 47.4899404858925, 19.066606348458773
+
+4.	Rákóczi 28, zebra 47.495989164866224, 19.065995678794334
