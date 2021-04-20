@@ -68,7 +68,7 @@
         net.innerHTML = event.data;
         console.log(event.data);
         c = JSON.parse(event.data);
-        if(c.clients){
+        if (c.clients) {
             //console.log('clients ', c.clients);
             nrclients.innerHTML = c.clients;
         }
@@ -150,6 +150,10 @@
         }));
     });
 
+    myAudio.addEventListener('timeupdate', function () {
+        //sets the percentage
+        bar.style.width = parseInt(((myAudio.currentTime / myAudio.duration) * 100), 10) + "%";
+    });
 
 
     /////////////////////////////////////// LOCATION

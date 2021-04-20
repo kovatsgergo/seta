@@ -7,7 +7,7 @@ const {
     Server
 } = require('ws');
 
-const PORT = process.env.PORT || 4444;
+const PORT = process.env.PORT || 3000;
 //const INDEX = '/index.html';
 
 const server = express()

@@ -67,3 +67,8 @@ function doPlay(func) {
         state.playing = false;
     }
 }
+
+myAudio.addEventListener('timeupdate', function () {
+    //sets the percentage
+    bar.style.width = parseInt(((myAudio.currentTime / myAudio.duration) * 100), 10) + "%";
+});
