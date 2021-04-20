@@ -62,7 +62,11 @@
     ws.onopen = function (event) {
         uniqueId = getId(handShake)
         document.getElementById('net').innerHTML = 'websocket connection opened ';
-    };
+    }
+
+    ws.onclose = function(event){
+        cancelKeepAlive();
+    }
 
     ws.onmessage = function (event) {
         net.innerHTML = event.data;
@@ -94,6 +98,22 @@
         }
         ws.send(JSON.stringify(message));
         unique.innerHTML += id;
+    }
+
+    var timerID = 0;
+
+    function keepAlive() {
+        var timeout = 20000;
+        if (webSocket.readyState == webSocket.OPEN) {
+            webSocket.send('');
+        }
+        timerId = setTimeout(keepAlive, timeout);
+    }
+
+    function cancelKeepAlive() {
+        if (timerId) {
+            clearTimeout(timerId);
+        }
     }
 
     function startSound() {

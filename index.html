@@ -54,7 +54,12 @@
     ws.onopen = function (event) {
         uniqueId = getId(handShake)
         document.getElementById('net').innerHTML = 'websocket connection opened ';
-    };
+        keepAlive();
+    }
+
+    ws.onclose = function(event){
+        cancelKeepAlive();
+    }
 
     ws.onmessage = function (event) {
         c = JSON.parse(event.data);
@@ -87,6 +92,22 @@
         }
         ws.send(JSON.stringify(message));
         unique.innerHTML += id;
+    }
+
+    var timerID = 0;
+
+    function keepAlive() {
+        var timeout = 20000;
+        if (webSocket.readyState == webSocket.OPEN) {
+            webSocket.send('');
+        }
+        timerId = setTimeout(keepAlive, timeout);
+    }
+
+    function cancelKeepAlive() {
+        if (timerId) {
+            clearTimeout(timerId);
+        }
     }
     ///////////////////////////////////////////// Geolocation, Sound
     var x = document.getElementById("demo");
@@ -122,6 +143,12 @@
     myAudio.addEventListener('timeupdate', function () {
         //sets the percentage
         bar.style.width = parseInt(((myAudio.currentTime / myAudio.duration) * 100), 10) + "%";
+    });
+
+    myAudio.addEventListener("ended", function () {
+        state.playing = false;
+        state.ended = myAudio.index;
+        successLoad(myAudio.index, true);
     });
 
     //////////////////// LOCATION
