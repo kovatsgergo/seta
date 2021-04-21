@@ -112,7 +112,7 @@ function storeClient(ws, id, group, list) {
             list.push(new Client(ws, id, group));
         }
     } else {
-        if (control != null) {
+        if (control != null && control.id != id) {
             ws.send(JSON.stringify({
                 'server': 'already'
             }));

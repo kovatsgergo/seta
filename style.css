@@ -87,6 +87,7 @@ button {
     border: solid 5px var(--bgcolor);
     border-radius: 5px;
     margin: 0;
+    background-color: gray;
     /*calc((100vw / 5 - 60px) / 8);*/
 }
 
