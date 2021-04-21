@@ -1,5 +1,6 @@
 var players = [];
-var urls = ['IGNAC_TRACK1.mp3', 'IGNAC_TRACK2.mp3', 'IGNAC_TRACK3.mp3', 'IGNAC_TRACK4.mp3']
+//var urls = ['IGNAC_TRACK1.mp3', 'IGNAC_TRACK2.mp3', 'IGNAC_TRACK3.mp3', 'IGNAC_TRACK4.mp3']
+var urls = ['IGNAC_TRACK1.m4a', 'IGNAC_TRACK2.m4a', 'IGNAC_TRACK3.m4a', 'IGNAC_TRACK4.m4a']
 //var urls = ['test1.mp3', 'test2.mp3', 'test3.mp3', 'test4.mp3']
 
 window.onload = loadAllFiles();
@@ -15,17 +16,17 @@ function loadAllFiles() {
                     })
                     .then(_ => {
                         //loaded.innerHTML += '<br>' + urls[i] + ' is successfully stored'; //document.getElementById('loaded')
-                        successLoad(i);
+                        setBoxColor(i);
                     });
             } else {
                 //loaded.innerHTML += '<br>' + urls[i] + ' is already stored';
-                successLoad(i);
+                setBoxColor(i);
             }
         });
     }
 }
 
-function successLoad(ind, ended) {
+function setBoxColor(ind, ended) {
     document.getElementById('bl' + ind).style.backgroundColor = ended ? 'orange' : 'green';
 }
 

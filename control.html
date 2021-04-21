@@ -32,7 +32,7 @@
         <div class="block" id="bl2">3</div>
         <div class="block" id="bl3">4</div>
     </div>
-    <audio id="myaudio" preload="auto" type="audio/mpeg">
+    <audio id="myaudio" preload="auto" type="audio/x-m4a">
         Your browser does not support the audio element.
     </audio>
     <div id="progress">
@@ -43,6 +43,9 @@
         <button class="full" id="start1" onclick="startClient(0)">1-es csoport</button>
         <button class="full" id="start2" onclick="startClient(1)">2-es csoport</button>
         <button class="full" id="start3" onclick="startClient(2)">3-as csoport</button>
+    </div>
+    <div id="exitrow">
+        <button onclick="location.reload()" id="exitButton">EXIT</button>
     </div>
 </body>
 
@@ -143,14 +146,16 @@
             ws.send(JSON.stringify(state));
             lastTime = myAudio.currentTime;
         }
-        currTime.innerHTML = '' + myAudio.currentTime + '/' + myAudio.duration;
+        currTime.innerHTML = '' + myAudio.currentTime.toFixed(2) + '/' + myAudio.duration.toFixed(2);
     });
 
-    /////// Adds to the function in common.js
-    myAudio.onended = function () {
+    myAudio.addEventListener("ended", function () {
+        state.time = myAudio.currentTime;
         ws.send(JSON.stringify(state));
         lastTime = myAudio.currentTime;
-    }
+        setBoxColor(myAudio.index, true);
+        state.playing = false;
+    });
 
     progress.addEventListener('click', function (e) {
         // calculate the normalized position clicked

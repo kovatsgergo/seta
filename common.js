@@ -31,13 +31,6 @@ function handShake(id) {
     unique.innerHTML += id;
 }
 
-////////////////////////////////////////// SOUND
-myAudio.addEventListener("ended", function () {
-    state.playing = false;
-    //state.ended = myAudio.index;
-    successLoad(myAudio.index, true);
-});
-
 function setBLs() {
     for (let i = 0; i < 4; i++) {
         temp = ''

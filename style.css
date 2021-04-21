@@ -35,8 +35,17 @@ h4 {
     margin: 5px;
 }
 
-#allStop{
+#allStop, #exitrow{
+    margin: 10px;
     text-align: center;
+}
+
+#exitButton{
+    background-color: darkred;
+    color: white;
+    position: absolute;
+    left:40%;
+    bottom: 10%;
 }
 
 #pauseButton{
@@ -73,7 +82,7 @@ h4 {
 }
 
 button {
-    font-size: 1.3em;
+    font-size: 1.5em;
 }
 
 .row {

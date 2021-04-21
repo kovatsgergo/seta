@@ -1,7 +1,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=400, initial-scale=1.0">
-    <link rel="shortcut icon" type="image/png" href="/faviconCli.png"/>
+    <link rel="shortcut icon" type="image/png" href="/faviconCli.png" />
     <title>Idővnal néző</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.rawgit.com/localForage/localForage/4ce19202/dist/localforage.min.js"></script>
@@ -23,7 +23,7 @@
         <div class="block" id="bl2">3</div>
         <div class="block" id="bl3">4</div>
     </div>
-    <audio id="myaudio" preload="auto" type="audio/mpeg">
+    <audio id="myaudio" preload="auto" type="audio/x-m4a">
         Your browser does not support the audio element.
     </audio>
     <div id="progress">
@@ -102,6 +102,9 @@
         console.log(state, c);
         if (!c.playing) {
             doPlay('stop').then(_ => {
+                if (c.time != state.time) {
+                    myAudio.currentTime = Math.min(c.time, myAudio.duration);
+                }
                 state = c;
                 nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
                 setBLs();
@@ -121,13 +124,15 @@
                 }
             });
         } else {
-            setSpeed(c.time);
-            state.playing = c.playing;
-            var command = c.playing ? 'start' : 'stop';
-            doPlay(command).then(_ => {
-                nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
-                setBLs();
-            });
+            if (c.time < myAudio.duration) {
+                setSpeed(c.time);
+                state.playing = c.playing;
+                var command = c.playing ? 'start' : 'stop';
+                doPlay(command).then(_ => {
+                    nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
+                    setBLs();
+                });
+            }
         }
     }
 
@@ -150,7 +155,13 @@
         //sets the percentage
         bar.style.width = parseInt(((myAudio.currentTime / myAudio.duration) * 100), 10) + "%";
         state.time = myAudio.currentTime;
-        currTime.innerHTML = '' + myAudio.currentTime;
+        currTime.innerHTML = '' + myAudio.currentTime.toFixed(2) + '/' + myAudio.duration.toFixed(2);
+    });
+
+    myAudio.addEventListener("ended", function () {
+        state.playing = false;
+        //lastTime = myAudio.currentTime;
+        setBoxColor(myAudio.index, true);
     });
 
 
@@ -163,7 +174,6 @@
     navigator.mediaSession.setActionHandler('stop', function () {
         /* Code excerpted. */
     });
-
 </script>
 <script src="sound2.js"></script>
 <script src="common.js"></script>
