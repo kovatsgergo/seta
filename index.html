@@ -1,17 +1,17 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=400, initial-scale=1.0">
-    <title>Location-Based Sounds</title>
+    <link rel="shortcut icon" type="image/png" href="/faviconCli.png"/>
+    <title>Idővnal néző</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.rawgit.com/localForage/localForage/4ce19202/dist/localforage.min.js"></script>
     <script src="uniqueMe.js"></script>
-    <!--script src="Tone.js"></script-->
     <script src="sound2.js"></script>
     <script src="NoSleep.js"></script>
 </head>
 
 <body>
-    <h2>CLIENT</h2>
+    <h2>Néző</h2>
     <!--div id="mapid"></div-->
     <div id="unique">unique id: </div>
     <div>kiválasztott track: <span id="nowplaying"></span></div>
@@ -24,10 +24,6 @@
         <div class="block" id="bl2">3</div>
         <div class="block" id="bl3">4</div>
     </div>
-    <!--h4>Jelenlegi pozíció</h4>
-    <div id="demo"></div>
-    <div id="watcher">watchxxxer</div>
-    <div id="closeTo">close to</div-->
     <audio id="myaudio" preload="auto" type="audio/mpeg">
         Your browser does not support the audio element.
     </audio>
@@ -169,14 +165,5 @@
         /* Code excerpted. */
     });
 
-    //////////////////// LOCATION
-
-    /*function showPosition(position) {
-        coords = position.coords;
-        setCoords(coords);
-        x.innerHTML = "Latitude: " + position.coords.latitude +
-            "<br>Longitude: " + position.coords.longitude;
-    }*/
 </script>
 <script src="common.js"></script>
-<!--script src="geoloc.js"></script-->

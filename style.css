@@ -19,6 +19,13 @@ h4 {
     margin-bottom: 0px;
 }
 
+#unique{
+    float: right;
+    position: absolute;
+    right: 10;
+    top: 10px;
+}
+
 #allStart{
     text-align: center;
     margin-bottom: 10px;
@@ -97,6 +104,7 @@ button {
     margin: auto;
     margin-top: 20px;
     border: 1px solid black;
+    border-radius: 5px;
 }
 
 #bar {

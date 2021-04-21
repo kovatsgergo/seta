@@ -40,9 +40,6 @@ wss.on('connection', (ws, req) => {
             storeNewClient(ws, obj.new);
             ws.send(JSON.stringify(state));
         }
-        /*if (obj.latitude) {
-            updateNezos(ws, obj);
-        } else */
         if (obj.time !== undefined) {
             state = obj;
             nezos.forEach(nezo => {
@@ -65,14 +62,6 @@ class Client {
         return this.id == client.id;
     }
 }
-
-/*function updateNezos(ws, coords) {
-    nezos.forEach(nezo => {
-        if (nezo.ws == ws) {
-            nezo.setCoords(coords);
-        }
-    })
-}*/
 
 function storeNewClient(ws, obj) {
     ///////kiszedni

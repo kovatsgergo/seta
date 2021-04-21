@@ -34,7 +34,7 @@ function handShake(id) {
 ////////////////////////////////////////// SOUND
 myAudio.addEventListener("ended", function () {
     state.playing = false;
-    state.ended = myAudio.index;
+    //state.ended = myAudio.index;
     successLoad(myAudio.index, true);
 });
 
