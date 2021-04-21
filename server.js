@@ -136,3 +136,13 @@ function removeClient(ws, list) {
     }
     sendClients();
 }
+
+/*var timerID = 0;
+
+function keepAlive() {
+    var timeout = 5000;
+    if (ws.readyState == ws.OPEN) {
+        ws.send(JSON.stringify({}));
+    }
+    timerId = setTimeout(keepAlive, timeout);
+}*/

@@ -2,23 +2,27 @@ var players = [];
 var urls = ['IGNAC_TRACK1.mp3', 'IGNAC_TRACK2.mp3', 'IGNAC_TRACK3.mp3', 'IGNAC_TRACK4.mp3']
 //var urls = ['test1.mp3', 'test2.mp3', 'test3.mp3', 'test4.mp3']
 
-for (let i = 0; i < urls.length; i++) {
-    localforage.getItem('f' + i).then(blob => {
-        if (!blob) {
-            fetch(urls[i])
-                .then(res => res.blob())
-                .then(blob => {
-                    localforage.setItem('f' + i, blob)
-                })
-                .then(_ => {
-                    //loaded.innerHTML += '<br>' + urls[i] + ' is successfully stored'; //document.getElementById('loaded')
-                    successLoad(i);
-                });
-        } else {
-            //loaded.innerHTML += '<br>' + urls[i] + ' is already stored';
-            successLoad(i);
-        }
-    });
+window.onload = loadAllFiles();
+
+function loadAllFiles() {
+    for (let i = 0; i < urls.length; i++) {
+        localforage.getItem('f' + i).then(blob => {
+            if (!blob) {
+                fetch(urls[i])
+                    .then(res => res.blob())
+                    .then(blob => {
+                        localforage.setItem('f' + i, blob)
+                    })
+                    .then(_ => {
+                        //loaded.innerHTML += '<br>' + urls[i] + ' is successfully stored'; //document.getElementById('loaded')
+                        successLoad(i);
+                    });
+            } else {
+                //loaded.innerHTML += '<br>' + urls[i] + ' is already stored';
+                successLoad(i);
+            }
+        });
+    }
 }
 
 function successLoad(ind, ended) {
@@ -59,7 +63,7 @@ function playIt(func, ind, prom) {
 function doPlay(func) {
     if (func === 'start') {
         console.log('START');
-        return myAudio.play();        
+        return myAudio.play();
     }
 
     if (func === 'stop') {
