@@ -1,6 +1,6 @@
 'use strict';
 var nezos = [];
-var controls = [];
+var control;
 
 const express = require('express');
 const {
@@ -31,27 +31,10 @@ wss.on('connection', (ws, req) => {
 
     ws.on('close', () => {
         removeClientFromAll(ws);
-
-        /*if (nezos.includes(ws)) {
-            nezos.splice(nezos.indexOf(ws), 1);
-        } else if (controls.includes(ws)) {
-            controls.splice(nezos.indexOf(ws), 1);
-        }*/
     });
 
     ws.on('message', function (data) {
         console.log('message', data);
-        /*if (data === 'client new') { //////////// NEW CLIENT = NEZO
-            //nezos.push(new Client(ws));
-            storeClient(ws, nezos);
-            console.log('at ' + new Date().toLocaleTimeString() +
-                ' New CLIENT added, now total: ' + nezos.length);
-        } else if (data === 'control new') {
-            //controls.push(new Client(ws));
-            storeClient(ws, controls);
-            console.log('at ' + new Date().toLocaleTimeString() +
-                ' New CONTROL added, now total: ' + controls.length);
-        } else {*/
         var obj = JSON.parse(data);
         if (obj.new) {
             storeNewClient(ws, obj.new);
@@ -59,21 +42,12 @@ wss.on('connection', (ws, req) => {
         }
         if (obj.latitude) {
             updateNezos(ws, obj);
-        }
-        /*else if (obj.control) { ///// FORWARD TO NEZOS
-                   console.log(obj);
-                   nezos.forEach(nezo => {
-                       nezo.ws.send(JSON.stringify(obj));
-                   });
-               } */
-        else if (obj.time !== undefined) {
+        } else if (obj.time !== undefined) {
             state = obj;
             nezos.forEach(nezo => {
                 nezo.ws.send(JSON.stringify(obj));
             });
         }
-        //console.log('message', obj);
-        //}
     });
 });
 
@@ -105,36 +79,46 @@ function storeNewClient(ws, obj) {
         if (obj.type == 'client') {
             storeClient(ws, id, nezos);
         } else {
-            storeClient(ws, id, controls);
+            storeClient(ws, id);
         }
-        controls.forEach(control => {
-            control.ws.send(JSON.stringify({
-                'clients': nezos.length
-            }))
-        });
+        //controls.forEach(control => {
+        control.ws.send(JSON.stringify({
+            'clients': nezos.length
+        }))
+        //});
     }
 }
 
 function storeClient(ws, id, group) {
-    let found = false;
-    group.forEach(member => {
-        if (member.id == id) {
-            found = true;
-            if (member.ws != ws) {
-                member.ws = ws;
+    if (group) {
+        let found = false;
+        group.forEach(member => {
+            if (member.id == id) {
+                found = true;
+                if (member.ws != ws) {
+                    member.ws = ws;
+                }
             }
+        });
+        if (!found) {
+            group.push(new Client(ws, id));
         }
-    });
-    if (!found) {
-        group.push(new Client(ws, id));
+        console.log(group);
+    } else {
+        if (control != null) {
+            ws.send(JSON.stringify({
+                'server': 'already'
+            }));
+        } else {
+            control = new Client(ws, id);
+        }
     }
-    console.log(group);
 }
 
 function removeClientFromAll(ws) {
-    removeClient(ws, controls);
+    removeClient(ws);
     removeClient(ws, nezos);
-    if (nezos.length + controls.length == 0) {
+    if (nezos.length > 0 || control != null) {
         state = {
             'index': -1,
             'time': -1,
@@ -144,10 +128,14 @@ function removeClientFromAll(ws) {
 }
 
 function removeClient(ws, group) {
-    group.forEach(el => {
-        if (el.ws == ws) {
-            group.splice(group.indexOf(el), 1);
-            console.log(group);
-        }
-    });
+    if (group)
+        group.forEach(el => {
+            if (el.ws == ws) {
+                group.splice(group.indexOf(el), 1);
+                console.log(group);
+            }
+        });
+    else {
+        control = null;
+    }
 }

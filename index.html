@@ -14,6 +14,7 @@
     <h2>CLIENT</h2>
     <!--div id="mapid"></div-->
     <div id="unique">unique id: </div>
+    <div>kiválasztott track: <span id="nowplaying"></span></div>
     <h4>Itt láthatók a parancsok a vezérlőtől</h4>
     <div id="net">net messages</div>
     <h4>Zöldre vált ha letöltötte az adott fájlt</h4>
@@ -32,6 +33,7 @@
     </audio>
     <div id="progress">
         <div id="bar"></div>
+        <span id="currTime"></span>
     </div>
     <button class="full" id="start" onclick="startSound()">Hangok engedélyezése</button>
 </body>
@@ -107,6 +109,7 @@
             if (!c.playing) {
                 doPlay('stop');
                 state = c;
+                nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
             }
             //console.log('THIS');
             preparePlayer(c.index).then(_ => {
@@ -115,15 +118,15 @@
                 if (c.playing) {
                     doPlay('start');
                     state = c;
+                    nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
                 }
             });
         } else {
             setSpeed(c.time);
-            if (c.playing) {
-                doPlay('start');
-            } else {
-                doPlay('stop');
-            }
+            var command = c.playing ? 'start' : 'stop';
+            doPlay(command).then(_ => {
+                nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
+            });
         }
     }
 
@@ -146,6 +149,7 @@
         //sets the percentage
         bar.style.width = parseInt(((myAudio.currentTime / myAudio.duration) * 100), 10) + "%";
         state.time = myAudio.currentTime;
+        currTime.innerHTML = '' + myAudio.currentTime;
     });
 
 

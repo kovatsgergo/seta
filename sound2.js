@@ -48,31 +48,23 @@ function returnPromise() {
 function playIt(ind, func, prom) {
     console.log('playIt', ind, func);
     if (myAudio.index == ind) {
-        doPlay(func);
+        return doPlay(func);
     } else {
         return preparePlayer(ind).then(_ => {
-            doPlay(func);
+            return doPlay(func);
         });
     }
-    /*if (prom) {
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                resolve('foo');
-            }, 300);
-        });
-    }*/
 }
 
 function doPlay(func) {
     if (func === 'start') {
         console.log('START');
-        myAudio.play();
-        state.playing = true;
+        return myAudio.play();        
     }
 
     if (func === 'stop') {
         console.log('STOP');
         myAudio.pause();
-        state.playing = false;
+        return returnPromise();
     }
 }

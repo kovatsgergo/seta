@@ -19,14 +19,15 @@
 <body>
     <h1>CONTROL</h1>
     <div id="unique">unique id: </div>
-    <button onclick="playItC(0, 'start')">start 1</button>
     <button onclick="playItC(0, 'stop')">pause 1</button>
-    <button onclick="playItC(1, 'stop')">pause 1->2</button>
+    <button onclick="playItC(0, 'start')">start 1</button>
+    <button onclick="playItC(1, 'stop')">pause 2</button>
     <button onclick="playItC(1, 'start')">start 2</button>
-    <button onclick="playItC(2, 'stop')">pause 2->3</button>
+    <button onclick="playItC(2, 'stop')">pause 3</button>
     <button onclick="playItC(2, 'start')">start 3</button>
-    <button onclick="playItC(3, 'stop')">pause 3->4</button>
+    <button onclick="playItC(3, 'stop')">pause 4</button>
     <button onclick="playItC(3, 'start')">start 4</button>
+    <div>kiválasztott track: <span id="nowplaying"></span></div>
     <h4>Itt láthatók az üzenetek a szervertől</h4>
     <div id="net">net messages</div>
     <h4>Zöldre vált ha letöltötte az adott fájlt</h4>
@@ -48,6 +49,7 @@
     </audio>
     <div id="progress">
         <div id="bar"></div>
+        <span id="currTime"></span>
     </div>
     <button class="full" id="start" onclick="startSound()">Hangok engedélyezése</button>
 </body>
@@ -93,6 +95,9 @@
             } else if (c.time !== undefined) {
                 //state = c;
                 setupSoundState(c);
+            }else if(c.server){
+                alert('Már van kontrol');
+                window.location.href = "/";
             }
         }
 
@@ -116,18 +121,19 @@
         playIt(ind, func, true).then(_ => {
             ws.send(JSON.stringify(state));
         });
+        nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
     }
 
     function setupSoundState(c) {
         console.log(state, c);
         state = c;
+        nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
         //console.log('THIS');
         preparePlayer(c.index).then(_ => {
             //console.log('PREPARED');
             if (c.playing) {
                 myAudio.currentTime = c.time;
                 doPlay('start');
-                
             }
         });
     }
@@ -149,12 +155,13 @@
     //////////////////////////////////////////// AUDIO CONTROL
     myAudio.addEventListener('timeupdate', function () {
         //sets the percentage
-        bar.style.width = parseInt(((myAudio.currentTime / myAudio.duration) * 100), 10) + "%";
         state.time = myAudio.currentTime;
+        bar.style.width = parseInt(((myAudio.currentTime / myAudio.duration) * 100), 10) + "%";
         if (Math.abs(myAudio.currentTime - lastTime) > 3) {
             ws.send(JSON.stringify(state));
             lastTime = myAudio.currentTime;
         }
+        currTime.innerHTML = '' + myAudio.currentTime;
     });
 
     progress.addEventListener('click', function (e) {
