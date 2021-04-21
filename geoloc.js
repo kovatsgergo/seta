@@ -28,7 +28,7 @@ function success(position) {
             //navigator.geolocation.clearWatch(id);
             switch (target.type) {
                 case 'auto':
-                    playIt(target.music, target.func);
+                    playIt(target.func, target.music);
                     break;
                 case 'button':
                     //createFullButton(target);

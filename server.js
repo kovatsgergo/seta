@@ -118,7 +118,7 @@ function storeClient(ws, id, group) {
 function removeClientFromAll(ws) {
     removeClient(ws);
     removeClient(ws, nezos);
-    if (nezos.length > 0 || control != null) {
+    if (nezos.length == 0 && control == null) {
         state = {
             'index': -1,
             'time': -1,

@@ -19,14 +19,16 @@
 <body>
     <h1>CONTROL</h1>
     <div id="unique">unique id: </div>
-    <button onclick="playItC(0, 'stop')">pause 1</button>
-    <button onclick="playItC(0, 'start')">start 1</button>
-    <button onclick="playItC(1, 'stop')">pause 2</button>
-    <button onclick="playItC(1, 'start')">start 2</button>
-    <button onclick="playItC(2, 'stop')">pause 3</button>
-    <button onclick="playItC(2, 'start')">start 3</button>
-    <button onclick="playItC(3, 'stop')">pause 4</button>
-    <button onclick="playItC(3, 'start')">start 4</button>
+    <!--button onclick="playItC(0, 'stop')">pause 1</button-->
+    <button onclick="playItC('start', 0)">start 1</button>
+    <!--button onclick="playItC(1, 'stop')">pause 2</button-->
+    <button onclick="playItC('start', 1)">start 2</button>
+    <!--button onclick="playItC(2, 'stop')">pause 3</button-->
+    <button onclick="playItC('start', 2)">start 3</button>
+    <!--button onclick="playItC(3, 'stop')">pause 4</button-->
+    <button onclick="playItC('start', 3)">start 4</button>
+    <button onclick="playItC('stop')">STOP</button>
+
     <div>kiválasztott track: <span id="nowplaying"></span></div>
     <h4>Itt láthatók az üzenetek a szervertől</h4>
     <div id="net">net messages</div>
@@ -95,7 +97,7 @@
             } else if (c.time !== undefined) {
                 //state = c;
                 setupSoundState(c);
-            }else if(c.server){
+            } else if (c.server) {
                 alert('Már van kontrol');
                 window.location.href = "/";
             }
@@ -109,18 +111,20 @@
         noSleep.enable();
     }
 
-    function playItC(ind, func) {
-        /*message = {
-            'control': {
-                'ind': ind,
-                'func': func
-            }
-        }*/
-        state.index = ind;
+    function playItC(func, ind = -1) {
+        console.log('state before ', state);
         state.playing = func == 'start';
-        playIt(ind, func, true).then(_ => {
-            ws.send(JSON.stringify(state));
-        });
+        if (ind > -1) {
+            state.index = ind;
+            playIt(func, ind, true).then(_ => {
+                ws.send(JSON.stringify(state));
+            });
+        } else {
+            doPlay(func).then(_ => {
+                ws.send(JSON.stringify(state));
+            });
+        }
+        console.log('state before ', state);
         nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
     }
 
@@ -172,6 +176,7 @@
         // move the playhead to the correct position
         myAudio.currentTime = clickTime;
         lastTime = clickTime;
+        state.time = clickTime;
         ws.send(JSON.stringify(state));
     });
 

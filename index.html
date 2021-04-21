@@ -78,16 +78,10 @@
 
         ws.onmessage = function (event) {
             c = JSON.parse(event.data);
-            /*if (c.control) {
-                playIt(c.control.ind, c.control.func);
-            } else if (c.timeupdate) {
-                myAudio.currentTime = c.timeupdate;
-            } else */
             if (c.time !== undefined) {
                 //state = c;
                 setupSoundState(c);
             }
-            //console.log(event.data);
             net.innerHTML = event.data;
         }
 

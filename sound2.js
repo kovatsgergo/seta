@@ -45,8 +45,8 @@ function returnPromise() {
     });
 }
 
-function playIt(ind, func, prom) {
-    console.log('playIt', ind, func);
+function playIt(func, ind, prom) {
+    console.log('playIt', func, ind);
     if (myAudio.index == ind) {
         return doPlay(func);
     } else {
