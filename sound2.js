@@ -1,6 +1,6 @@
 var players = [];
-//var urls = ['IGNAC_TRACK1.mp3', 'IGNAC_TRACK2.mp3', 'IGNAC_TRACK3.mp3', 'IGNAC_TRACK4.mp3']
-var urls = ['test1.mp3', 'test2.mp3', 'test3.mp3', 'test4.mp3']
+var urls = ['IGNAC_TRACK1.mp3', 'IGNAC_TRACK2.mp3', 'IGNAC_TRACK3.mp3', 'IGNAC_TRACK4.mp3']
+//var urls = ['test1.mp3', 'test2.mp3', 'test3.mp3', 'test4.mp3']
 
 for (let i = 0; i < urls.length; i++) {
     localforage.getItem('f' + i).then(blob => {
@@ -21,13 +21,13 @@ for (let i = 0; i < urls.length; i++) {
     });
 }
 
-function successLoad(ind){
-    document.getElementById('bl'+ind).style.backgroundColor = 'green';
+function successLoad(ind, ended) {
+    document.getElementById('bl' + ind).style.backgroundColor = ended ? 'orange' : 'green';
 }
 
 function preparePlayer(ind) {
     state.index = ind;
-    localforage.getItem('f' + ind).then(blob => {
+    return localforage.getItem('f' + ind).then(blob => {
         console.log(blob);
         if (blob) {
             console.log('bloooob', URL.createObjectURL(blob));
@@ -35,23 +35,32 @@ function preparePlayer(ind) {
             console.log('ind ' + ind);
             myAudio.index = ind;
         }
-    });
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            resolve('foo');
-        }, 300);
+        return 1;
     });
 }
 
-function playIt(ind, func) {
+function returnPromise() {
+    return new Promise(function (resolve, reject) {
+        resolve('start of new Promise');
+    });
+}
+
+function playIt(ind, func, prom) {
     console.log('playIt', ind, func);
     if (myAudio.index == ind) {
         doPlay(func);
     } else {
-        preparePlayer(ind).then(_ => {
+        return preparePlayer(ind).then(_ => {
             doPlay(func);
-        })
+        });
     }
+    /*if (prom) {
+        return new Promise((resolve, reject) => {
+            setTimeout(() => {
+                resolve('foo');
+            }, 300);
+        });
+    }*/
 }
 
 function doPlay(func) {

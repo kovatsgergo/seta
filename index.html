@@ -7,20 +7,13 @@
     <script src="uniqueMe.js"></script>
     <!--script src="Tone.js"></script-->
     <script src="sound2.js"></script>
+    <script src="NoSleep.js"></script>
 </head>
 
 <body>
     <h2>CLIENT</h2>
     <!--div id="mapid"></div-->
     <div id="unique">unique id: </div>
-    <!--button onclick="playIt(0, 'start')">start 1</button>
-    <button onclick="playIt(0, 'stop')">stop 1</button>
-    <button onclick="playIt(1, 'start')">start 2</button>
-    <button onclick="playIt(1, 'stop')">stop 2</button>
-    <button onclick="playIt(2, 'start')">start 3</button>
-    <button onclick="playIt(2, 'stop')">stop 3</button>
-    <button onclick="playIt(3, 'start')">start 4</button>
-    <button onclick="playIt(3, 'stop')">stop 4</button-->
     <h4>Itt láthatók a parancsok a vezérlőtől</h4>
     <div id="net">net messages</div>
     <h4>Zöldre vált ha letöltötte az adott fájlt</h4>
@@ -45,35 +38,22 @@
 
 <script>
     var role = 'client';
+
+    var x = document.getElementById("demo");
+    var watcher = document.getElementById('watcher');
+    var closeTo = document.getElementById('closeTo');
+    var myAudio = document.getElementById('myaudio');
+    var coords;
+    var state = {
+        'index': -1,
+        'time': -1,
+        'playing': false
+    }
+
     ////////////////////////////////////////////// WebSocket
     var HOST = location.origin.replace(/^http/, 'ws');
-    var ws = new WebSocket(HOST);
-
+    var ws;
     var uniqueId;
-
-    ws.onopen = function (event) {
-        uniqueId = getId(handShake)
-        document.getElementById('net').innerHTML = 'websocket connection opened ';
-        keepAlive();
-    }
-
-    ws.onclose = function(event){
-        cancelKeepAlive();
-    }
-
-    ws.onmessage = function (event) {
-        c = JSON.parse(event.data);
-        if (c.control) {
-            playIt(c.control.ind, c.control.func);
-        } else if (c.timeupdate) {
-            myAudio.currentTime = c.timeupdate;
-        } else if (c.time) {
-            state = c;
-            setupSoundState();
-        }
-        console.log(event.data);
-        net.innerHTML = event.data;
-    }
 
     function setCoords(coord) {
         temp = {
@@ -83,82 +63,103 @@
         ws.send(JSON.stringify(temp));
     }
 
-    function handShake(id) {
-        message = {
-            'new': {
-                'type': role,
-                'id': id
-            }
-        }
-        ws.send(JSON.stringify(message));
-        unique.innerHTML += id;
-    }
-
-    var timerID = 0;
-
-    function keepAlive() {
-        var timeout = 20000;
-        if (webSocket.readyState == webSocket.OPEN) {
-            webSocket.send('');
-        }
-        timerId = setTimeout(keepAlive, timeout);
-    }
-
-    function cancelKeepAlive() {
-        if (timerId) {
-            clearTimeout(timerId);
-        }
-    }
     ///////////////////////////////////////////// Geolocation, Sound
-    var x = document.getElementById("demo");
-    var watcher = document.getElementById('watcher');
-    var closeTo = document.getElementById('closeTo');
-    var myAudio = document.getElementById('myaudio');
-    var coords;
 
     function startSound() {
-        //Tone.start();
+
+        ws = new WebSocket(HOST);
+        ws.onopen = function (event) {
+            uniqueId = getId(handShake)
+            document.getElementById('net').innerHTML = 'websocket connection opened ';
+            keepAlive();
+        }
+
+        ws.onmessage = function (event) {
+            c = JSON.parse(event.data);
+            /*if (c.control) {
+                playIt(c.control.ind, c.control.func);
+            } else if (c.timeupdate) {
+                myAudio.currentTime = c.timeupdate;
+            } else */
+            if (c.time !== undefined) {
+                //state = c;
+                setupSoundState(c);
+            }
+            //console.log(event.data);
+            net.innerHTML = event.data;
+        }
+
+        ws.onclose = function (event) {
+            cancelKeepAlive();
+        }
         document.getElementById('start').remove();
         if (!state.playing)
             preparePlayer('0');
         else {
-            setupSoundState();
+            setupSoundState(state);
+        }
+        noSleep.enable();
+    }
+
+    function setupSoundState(c) {
+        console.log(state, c);
+        if (state.index != c.index) {
+            if (!c.playing) {
+                doPlay('stop');
+                state = c;
+            }
+            //console.log('THIS');
+            preparePlayer(c.index).then(_ => {
+                //console.log('PREPARED');
+                setSpeed(c.time);
+                if (c.playing) {
+                    doPlay('start');
+                    state = c;
+                }
+            });
+        } else {
+            setSpeed(c.time);
+            if (c.playing) {
+                doPlay('start');
+            } else {
+                doPlay('stop');
+            }
         }
     }
 
-    var state = {
-        'index': -1,
-        'time': -1,
-        'playing': false
-    }
-
-    function setupSoundState() {
-        preparePlayer(state.index).then(_ => {
-            myAudio.currentTime = state.time;
-            if (state.playing)
-                doPlay('start');
-        })
+    function setSpeed(time2) {
+        var diff = time2 - state.time;
+        console.log('diff ', diff);
+        if (Math.abs(time2 - state.time) > 15) {
+            myAudio.currentTime = time2;
+            myAudio.playbackRate = 1;
+        } else if (diff > 0) {
+            myAudio.playbackRate = 1.25;
+        } else if (diff < -2) {
+            myAudio.playbackRate = 0.8;
+        } else {
+            myAudio.playbackRate = 1;
+        }
     }
 
     myAudio.addEventListener('timeupdate', function () {
         //sets the percentage
         bar.style.width = parseInt(((myAudio.currentTime / myAudio.duration) * 100), 10) + "%";
+        state.time = myAudio.currentTime;
     });
 
-    myAudio.addEventListener("ended", function () {
-        state.playing = false;
-        state.ended = myAudio.index;
-        successLoad(myAudio.index, true);
+
+    navigator.mediaSession.setActionHandler('play', function () {
+        /* Code excerpted. */
+    });
+    navigator.mediaSession.setActionHandler('pause', function () {
+        /* Code excerpted. */
+    });
+    navigator.mediaSession.setActionHandler('stop', function () {
+        /* Code excerpted. */
     });
 
     //////////////////// LOCATION
-    function getLocation() {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(showPosition);
-        } else {
-            x.innerHTML = "Geolocation is not supported by this browser.";
-        }
-    }
 
     function showPosition(position) {
         coords = position.coords;
@@ -166,22 +167,6 @@
         x.innerHTML = "Latitude: " + position.coords.latitude +
             "<br>Longitude: " + position.coords.longitude;
     }
-
-    getLocation();
-
-    /*function createFullButton(target) {
-        if (!document.getElementById(target.music)) {
-            bt = document.createElement('button');
-            bt.className = 'full';
-            bt.id = target.music;
-            bt.appendChild(document.createTextNode(target.text + ' ' + target.func));
-            bt.onclick = function () {
-                playIt(target.music, target.func);
-                bt.remove();
-            }
-            document.body.appendChild(bt);
-            preparePlayer(parseInt(target.music));
-        }
-    }*/
 </script>
+<script src="common.js"></script>
 <script src="geoloc.js"></script>

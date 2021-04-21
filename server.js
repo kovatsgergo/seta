@@ -41,7 +41,7 @@ wss.on('connection', (ws, req) => {
 
     ws.on('message', function (data) {
         console.log('message', data);
-        if (data === 'client new') { //////////// NEW CLIENT = NEZO
+        /*if (data === 'client new') { //////////// NEW CLIENT = NEZO
             //nezos.push(new Client(ws));
             storeClient(ws, nezos);
             console.log('at ' + new Date().toLocaleTimeString() +
@@ -51,24 +51,29 @@ wss.on('connection', (ws, req) => {
             storeClient(ws, controls);
             console.log('at ' + new Date().toLocaleTimeString() +
                 ' New CONTROL added, now total: ' + controls.length);
-        } else {
-            var obj = JSON.parse(data);
-            if (obj.new) {
-                storeNewClient(ws, obj.new);
-                ws.send(JSON.stringify(state));
-            }
-            if (obj.latitude) {
-                updateNezos(ws, obj);
-            } else if (obj.control || obj.timeupdate) { ///// FORWARD TO NEZOS
-                console.log(obj);
-                nezos.forEach(nezo => {
-                    nezo.ws.send(JSON.stringify(obj));
-                });
-            } else if (obj.time) {
-                state = obj;
-            }
-            //console.log('message', obj);
+        } else {*/
+        var obj = JSON.parse(data);
+        if (obj.new) {
+            storeNewClient(ws, obj.new);
+            ws.send(JSON.stringify(state));
         }
+        if (obj.latitude) {
+            updateNezos(ws, obj);
+        }
+        /*else if (obj.control) { ///// FORWARD TO NEZOS
+                   console.log(obj);
+                   nezos.forEach(nezo => {
+                       nezo.ws.send(JSON.stringify(obj));
+                   });
+               } */
+        else if (obj.time !== undefined) {
+            state = obj;
+            nezos.forEach(nezo => {
+                nezo.ws.send(JSON.stringify(obj));
+            });
+        }
+        //console.log('message', obj);
+        //}
     });
 });
 
@@ -107,7 +112,6 @@ function storeNewClient(ws, obj) {
                 'clients': nezos.length
             }))
         });
-
     }
 }
 
@@ -130,6 +134,13 @@ function storeClient(ws, id, group) {
 function removeClientFromAll(ws) {
     removeClient(ws, controls);
     removeClient(ws, nezos);
+    if (nezos.length + controls.length == 0) {
+        state = {
+            'index': -1,
+            'time': -1,
+            'playing': false
+        }
+    }
 }
 
 function removeClient(ws, group) {

@@ -7,6 +7,7 @@
     <script src="uniqueMe.js"></script>
     <!--script src="Tone.js"></script-->
     <script src="sound2.js"></script>
+    <script src="NoSleep.js"></script>
     <!--link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
         integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
         crossorigin="" />
@@ -20,12 +21,12 @@
     <div id="unique">unique id: </div>
     <button onclick="playItC(0, 'start')">start 1</button>
     <button onclick="playItC(0, 'stop')">pause 1</button>
+    <button onclick="playItC(1, 'stop')">pause 1->2</button>
     <button onclick="playItC(1, 'start')">start 2</button>
-    <button onclick="playItC(1, 'stop')">pause 2</button>
+    <button onclick="playItC(2, 'stop')">pause 2->3</button>
     <button onclick="playItC(2, 'start')">start 3</button>
-    <button onclick="playItC(2, 'stop')">pause 3</button>
+    <button onclick="playItC(3, 'stop')">pause 3->4</button>
     <button onclick="playItC(3, 'start')">start 4</button>
-    <button onclick="playItC(3, 'stop')">pause 4</button>
     <h4>Itt láthatók az üzenetek a szervertől</h4>
     <div id="net">net messages</div>
     <h4>Zöldre vált ha letöltötte az adott fájlt</h4>
@@ -54,84 +55,81 @@
 <script>
     var role = 'control';
 
-    var HOST = location.origin.replace(/^http/, 'ws');
-
-    var ws = new WebSocket(HOST);
-    var uniqueId;
-
-    ws.onopen = function (event) {
-        uniqueId = getId(handShake)
-        document.getElementById('net').innerHTML = 'websocket connection opened ';
-    }
-
-    ws.onclose = function(event){
-        cancelKeepAlive();
-    }
-
-    ws.onmessage = function (event) {
-        net.innerHTML = event.data;
-        console.log(event.data);
-        c = JSON.parse(event.data);
-        if (c.clients) {
-            //console.log('clients ', c.clients);
-            nrclients.innerHTML = c.clients;
-        }
-    }
-
-    function playItC(ind, func) {
-        message = {
-            'control': {
-                'ind': ind,
-                'func': func
-            }
-        }
-        ws.send(JSON.stringify(message));
-        playIt(ind, func);
-    }
-
-    function handShake(id) {
-        message = {
-            'new': {
-                'type': role,
-                'id': id
-            }
-        }
-        ws.send(JSON.stringify(message));
-        unique.innerHTML += id;
-    }
-
-    var timerID = 0;
-
-    function keepAlive() {
-        var timeout = 20000;
-        if (webSocket.readyState == webSocket.OPEN) {
-            webSocket.send('');
-        }
-        timerId = setTimeout(keepAlive, timeout);
-    }
-
-    function cancelKeepAlive() {
-        if (timerId) {
-            clearTimeout(timerId);
-        }
-    }
-
-    function startSound() {
-        //Tone.start();
-        document.getElementById('start').remove();
-        preparePlayer('0');
-    }
-
     var x = document.getElementById("demo");
     var watcher = document.getElementById('watcher');
     var closeTo = document.getElementById('closeTo');
     var myAudio = document.getElementById('myaudio');
     var coords;
-
     var state = {
         'index': -1,
-        'time': -1,
+        'time': -1.0,
         'playing': false
+    }
+
+    ////////////////////////////////////////////// WebSocket
+    var HOST = location.origin.replace(/^http/, 'ws');
+    var ws;
+    var uniqueId;
+
+    ///////////////////////////////////////////// Geolocation, Sound
+
+    function startSound() {
+
+        ws = new WebSocket(HOST);
+
+        ws.onopen = function (event) {
+            uniqueId = getId(handShake)
+            document.getElementById('net').innerHTML = 'websocket connection opened ';
+            keepAlive();
+        }
+
+        ws.onmessage = function (event) {
+            net.innerHTML = event.data;
+            console.log(event.data);
+            c = JSON.parse(event.data);
+            if (c.clients) {
+                //console.log('clients ', c.clients);
+                nrclients.innerHTML = c.clients;
+            } else if (c.time !== undefined) {
+                //state = c;
+                setupSoundState(c);
+            }
+        }
+
+        ws.onclose = function (event) {
+            cancelKeepAlive();
+        }
+        document.getElementById('start').remove();
+        preparePlayer('0');
+        noSleep.enable();
+    }
+
+    function playItC(ind, func) {
+        /*message = {
+            'control': {
+                'ind': ind,
+                'func': func
+            }
+        }*/
+        state.index = ind;
+        state.playing = func == 'start';
+        playIt(ind, func, true).then(_ => {
+            ws.send(JSON.stringify(state));
+        });
+    }
+
+    function setupSoundState(c) {
+        console.log(state, c);
+        state = c;
+        //console.log('THIS');
+        preparePlayer(c.index).then(_ => {
+            //console.log('PREPARED');
+            if (c.playing) {
+                myAudio.currentTime = c.time;
+                doPlay('start');
+                
+            }
+        });
     }
 
     /*var apiToken = 'pk.eyJ1Ijoia292YXRzZ2VyZ28iLCJhIjoiY2tua2N5b296MDJkODJwcXAzcTFhMmh1YiJ9.8lTFzDj7yi6NvfX4iNAo9Q'
@@ -146,15 +144,16 @@
         zoomOffset: -1,
         accessToken: apiToken
     }).addTo(mymap);*/
-
+    var lastTime = -1;
 
     //////////////////////////////////////////// AUDIO CONTROL
     myAudio.addEventListener('timeupdate', function () {
         //sets the percentage
         bar.style.width = parseInt(((myAudio.currentTime / myAudio.duration) * 100), 10) + "%";
         state.time = myAudio.currentTime;
-        if (Math.floor(myAudio.currentTime) % 3 == 0) {
+        if (Math.abs(myAudio.currentTime - lastTime) > 3) {
             ws.send(JSON.stringify(state));
+            lastTime = myAudio.currentTime;
         }
     });
 
@@ -165,35 +164,20 @@
 
         // move the playhead to the correct position
         myAudio.currentTime = clickTime;
-        ws.send(JSON.stringify({
-            'timeupdate': myAudio.currentTime
-        }));
+        lastTime = clickTime;
+        ws.send(JSON.stringify(state));
     });
-
-    myAudio.addEventListener('timeupdate', function () {
-        //sets the percentage
-        bar.style.width = parseInt(((myAudio.currentTime / myAudio.duration) * 100), 10) + "%";
-    });
-
 
     /////////////////////////////////////// LOCATION
-    function getLocation() {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(showPosition);
-        } else {
-            demo.innerHTML = "Geolocation is not supported by this browser.";
-        }
-    }
 
     function showPosition(position) {
-        demo.innerHTML = "Latitude: " + position.coords.latitude +
+        x.innerHTML = "Latitude: " + position.coords.latitude +
             "<br>Longitude: " + position.coords.longitude;
         /*p = [position.coords.latitude, position.coords.longitude];
         mymap.setView(p);
         marker = L.marker(p);
         marker.addTo(mymap);*/
     }
-
-    getLocation();
 </script>
+<script src="common.js"></script>
 <script src="geoloc.js"></script>
