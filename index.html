@@ -17,7 +17,7 @@
     <div>kiválasztott track: <span id="nowplaying"></span></div>
     <h4>Itt láthatók a parancsok a vezérlőtől</h4>
     <div id="net">net messages</div>
-    <h4>Zöldre vált ha letöltötte az adott fájlt</h4>
+    <h4>Hangfájlok státusza</h4>
     <div class="row">
         <div class="block" id="bl0">1</div>
         <div class="block" id="bl1">2</div>
@@ -99,27 +99,33 @@
 
     function setupSoundState(c) {
         console.log(state, c);
-        if (state.index != c.index) {
-            if (!c.playing) {
-                doPlay('stop');
+        if (!c.playing) {
+            doPlay('stop').then(_ => {
                 state = c;
                 nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
-            }
+                setBLs();
+            });
+        }
+        if (state.index != c.index) {
             //console.log('THIS');
             preparePlayer(c.index).then(_ => {
                 //console.log('PREPARED');
                 setSpeed(c.time);
                 if (c.playing) {
-                    doPlay('start');
-                    state = c;
-                    nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
+                    doPlay('start').then(_ => {
+                        state = c;
+                        nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
+                        setBLs();
+                    });
                 }
             });
         } else {
             setSpeed(c.time);
+            state.playing = c.playing;
             var command = c.playing ? 'start' : 'stop';
             doPlay(command).then(_ => {
                 nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
+                setBLs();
             });
         }
     }

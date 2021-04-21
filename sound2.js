@@ -46,7 +46,7 @@ function returnPromise() {
 }
 
 function playIt(func, ind, prom) {
-    console.log('playIt', func, ind);
+    //console.log('playIt', func, ind);
     if (myAudio.index == ind) {
         return doPlay(func);
     } else {

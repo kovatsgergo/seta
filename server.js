@@ -81,16 +81,22 @@ function storeNewClient(ws, obj) {
         } else {
             storeClient(ws, id);
         }
-        //controls.forEach(control => {
+        sendClients();
+    }
+}
+
+function sendClients() {
+    console.log('send: ', nezos.length, nezos.map(x => x.id), control);
+    if (control != null) {
         control.ws.send(JSON.stringify({
-            'clients': nezos.length
+            'clients': nezos.length,
+            'ids': nezos.map(x => x.id)
         }))
-        //});
     }
 }
 
 function storeClient(ws, id, group) {
-    if (group) {
+    if (typeof group !== 'undefined') {
         let found = false;
         group.forEach(member => {
             if (member.id == id) {
@@ -103,7 +109,6 @@ function storeClient(ws, id, group) {
         if (!found) {
             group.push(new Client(ws, id));
         }
-        console.log(group);
     } else {
         if (control != null) {
             ws.send(JSON.stringify({
@@ -128,14 +133,14 @@ function removeClientFromAll(ws) {
 }
 
 function removeClient(ws, group) {
-    if (group)
+    if (typeof group !== 'undefined') {
         group.forEach(el => {
             if (el.ws == ws) {
                 group.splice(group.indexOf(el), 1);
-                console.log(group);
             }
         });
-    else {
+    } else if (control.ws == ws) {
         control = null;
     }
+    sendClients();
 }

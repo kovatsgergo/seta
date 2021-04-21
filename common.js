@@ -37,6 +37,18 @@ myAudio.addEventListener("ended", function () {
     successLoad(myAudio.index, true);
 });
 
+function setBLs() {
+    for (let i = 0; i < 4; i++) {
+        temp = ''
+        if (state.index == i) {
+            temp += 'solid 5px' +
+                (state.playing ? ' black' : ' gray');
+        } else {
+            temp = 'none';
+        }
+        document.getElementById('bl' + i).style.border = temp;
+    }
+}
 
 //////////////////// LOCATION
 function getLocation() {

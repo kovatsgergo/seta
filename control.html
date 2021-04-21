@@ -27,12 +27,12 @@
     <button onclick="playItC('start', 2)">start 3</button>
     <!--button onclick="playItC(3, 'stop')">pause 4</button-->
     <button onclick="playItC('start', 3)">start 4</button>
-    <button onclick="playItC('stop')">STOP</button>
+    <button onclick="playItC('stop')">PAUSE</button>
 
     <div>kiválasztott track: <span id="nowplaying"></span></div>
     <h4>Itt láthatók az üzenetek a szervertől</h4>
     <div id="net">net messages</div>
-    <h4>Zöldre vált ha letöltötte az adott fájlt</h4>
+    <h4>Hangfájlok státusza</h4>
     <div class="row">
         <div class="block" id="bl0">1</div>
         <div class="block" id="bl1">2</div>
@@ -91,11 +91,10 @@
             net.innerHTML = event.data;
             console.log(event.data);
             c = JSON.parse(event.data);
-            if (c.clients) {
-                //console.log('clients ', c.clients);
-                nrclients.innerHTML = c.clients;
+            if (c.clients !== undefined) {
+                nrclients.innerHTML = c.clients + '<br>';
+                c.ids.map(x => nrclients.innerHTML += '<br>' + x);
             } else if (c.time !== undefined) {
-                //state = c;
                 setupSoundState(c);
             } else if (c.server) {
                 alert('Már van kontrol');
@@ -112,7 +111,6 @@
     }
 
     function playItC(func, ind = -1) {
-        console.log('state before ', state);
         state.playing = func == 'start';
         if (ind > -1) {
             state.index = ind;
@@ -124,13 +122,15 @@
                 ws.send(JSON.stringify(state));
             });
         }
-        console.log('state before ', state);
+        setBLs()
         nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
+
     }
 
     function setupSoundState(c) {
         console.log(state, c);
         state = c;
+        setBLs()
         nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
         //console.log('THIS');
         preparePlayer(c.index).then(_ => {
