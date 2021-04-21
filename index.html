@@ -95,6 +95,10 @@
         else {
             setupSoundState(state);
         }
+        myAudio.play().then(_=>{
+            myAudio.pause();
+        });
+        
         noSleep.enable();
     }
 
@@ -162,17 +166,6 @@
         state.playing = false;
         //lastTime = myAudio.currentTime;
         setBoxColor(myAudio.index, true);
-    });
-
-
-    navigator.mediaSession.setActionHandler('play', function () {
-        /* Code excerpted. */
-    });
-    navigator.mediaSession.setActionHandler('pause', function () {
-        /* Code excerpted. */
-    });
-    navigator.mediaSession.setActionHandler('stop', function () {
-        /* Code excerpted. */
     });
 </script>
 <script src="sound2.js"></script>

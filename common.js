@@ -44,6 +44,19 @@ function setBLs() {
     }
 }
 
+//////////////////// LOCK SCREEN CONTROL DISABLE
+if (navigator.mediaSession) {
+    navigator.mediaSession.setActionHandler('play', function () {
+        /* Code excerpted. */
+    });
+    navigator.mediaSession.setActionHandler('pause', function () {
+        /* Code excerpted. */
+    });
+    navigator.mediaSession.setActionHandler('stop', function () {
+        /* Code excerpted. */
+    });
+}
+
 //////////////////// LOCATION
 /*function getLocation() {
     if (navigator.geolocation) {
