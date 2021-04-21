@@ -19,17 +19,21 @@
 <body>
     <h1>CONTROL</h1>
     <div id="unique">unique id: </div>
-    <!--button onclick="playItC(0, 'stop')">pause 1</button-->
-    <button onclick="playItC('start', 0)">start 1</button>
-    <!--button onclick="playItC(1, 'stop')">pause 2</button-->
-    <button onclick="playItC('start', 1)">start 2</button>
-    <!--button onclick="playItC(2, 'stop')">pause 3</button-->
-    <button onclick="playItC('start', 2)">start 3</button>
-    <!--button onclick="playItC(3, 'stop')">pause 4</button-->
-    <button onclick="playItC('start', 3)">start 4</button>
-    <button onclick="playItC('stop')">PAUSE</button>
-
+    <div id="allStart">
+        <!--button onclick="playItC(0, 'stop')">pause 1</button-->
+        <button onclick="playItC('start', 0)">start 1</button>
+        <!--button onclick="playItC(1, 'stop')">pause 2</button-->
+        <button onclick="playItC('start', 1)">start 2</button>
+        <!--button onclick="playItC(2, 'stop')">pause 3</button-->
+        <button onclick="playItC('start', 2)">start 3</button>
+        <!--button onclick="playItC(3, 'stop')">pause 4</button-->
+        <button onclick="playItC('start', 3)">start 4</button>
+    </div>
+    <div id="allStop">
+        <button onclick="playItC('stop')" id="pausebutton">PAUSE</button>
+    </div>
     <div>kiválasztott track: <span id="nowplaying"></span></div>
+    <h4>Csatlakozott kliensek száma: <span id="nrclients"></span></h4>
     <h4>Itt láthatók az üzenetek a szervertől</h4>
     <div id="net">net messages</div>
     <h4>Hangfájlok státusza</h4>
@@ -39,13 +43,11 @@
         <div class="block" id="bl2">3</div>
         <div class="block" id="bl3">4</div>
     </div>
-    <h4>Jelenlegi pozíció</h4>
-    <div id="demo"></div>
-    <h4>Csatlakozott kliensek száma: <span id="nrclients"></span></h4>
-    <!--div id="nrclients"></div-->
     <!--div id="mapid"></div-->
+    <!--h4>Jelenlegi pozíció</h4>
+    <div id="demo"></div>
     <div id="watcher">watchxxxer</div>
-    <div id="closeTo">close to</div>
+    <div id="closeTo">close to</div-->
     <audio id="myaudio" preload="auto" type="audio/mpeg">
         Your browser does not support the audio element.
     </audio>
@@ -53,11 +55,16 @@
         <div id="bar"></div>
         <span id="currTime"></span>
     </div>
-    <button class="full" id="start" onclick="startSound()">Hangok engedélyezése</button>
+    <div id="startButtons">
+        <button class="full" id="start1" onclick="startClient(0)">1-es csoport</button>
+        <button class="full" id="start2" onclick="startClient(1)">2-es csoport</button>
+        <button class="full" id="start3" onclick="startClient(2)">3-as csoport</button>
+    </div>
 </body>
 
 <script>
     var role = 'control';
+    var group = -1;
 
     var x = document.getElementById("demo");
     var watcher = document.getElementById('watcher');
@@ -77,11 +84,11 @@
 
     ///////////////////////////////////////////// Geolocation, Sound
 
-    function startSound() {
-
+    function startClient(groupIndex) {
         ws = new WebSocket(HOST);
 
         ws.onopen = function (event) {
+            group = groupIndex;
             uniqueId = getId(handShake)
             document.getElementById('net').innerHTML = 'websocket connection opened ';
             keepAlive();
@@ -92,7 +99,7 @@
             console.log(event.data);
             c = JSON.parse(event.data);
             if (c.clients !== undefined) {
-                nrclients.innerHTML = c.clients + '<br>';
+                nrclients.innerHTML = c.clients;
                 c.ids.map(x => nrclients.innerHTML += '<br>' + x);
             } else if (c.time !== undefined) {
                 setupSoundState(c);
@@ -105,7 +112,7 @@
         ws.onclose = function (event) {
             cancelKeepAlive();
         }
-        document.getElementById('start').remove();
+        document.getElementById('startButtons').remove();
         preparePlayer('0');
         noSleep.enable();
     }
@@ -182,14 +189,14 @@
 
     /////////////////////////////////////// LOCATION
 
-    function showPosition(position) {
+    /*function showPosition(position) {
         x.innerHTML = "Latitude: " + position.coords.latitude +
             "<br>Longitude: " + position.coords.longitude;
-        /*p = [position.coords.latitude, position.coords.longitude];
-        mymap.setView(p);
-        marker = L.marker(p);
-        marker.addTo(mymap);*/
-    }
+        // p = [position.coords.latitude, position.coords.longitude];
+        // mymap.setView(p);
+        // marker = L.marker(p);
+        // marker.addTo(mymap);
+    }*/
 </script>
 <script src="common.js"></script>
-<script src="geoloc.js"></script>
+<!--script src="geoloc.js"></script-->

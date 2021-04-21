@@ -24,10 +24,10 @@
         <div class="block" id="bl2">3</div>
         <div class="block" id="bl3">4</div>
     </div>
-    <h4>Jelenlegi pozíció</h4>
+    <!--h4>Jelenlegi pozíció</h4>
     <div id="demo"></div>
     <div id="watcher">watchxxxer</div>
-    <div id="closeTo">close to</div>
+    <div id="closeTo">close to</div-->
     <audio id="myaudio" preload="auto" type="audio/mpeg">
         Your browser does not support the audio element.
     </audio>
@@ -35,11 +35,16 @@
         <div id="bar"></div>
         <span id="currTime"></span>
     </div>
-    <button class="full" id="start" onclick="startSound()">Hangok engedélyezése</button>
+    <div id="startButtons">
+        <button class="full" id="start1" onclick="startClient(0)">1-es csoport</button>
+        <button class="full" id="start2" onclick="startClient(1)">2-es csoport</button>
+        <button class="full" id="start3" onclick="startClient(2)">3-as csoport</button>
+    </div>
 </body>
 
 <script>
     var role = 'client';
+    var group = -1;
 
     var x = document.getElementById("demo");
     var watcher = document.getElementById('watcher');
@@ -67,10 +72,11 @@
 
     ///////////////////////////////////////////// Geolocation, Sound
 
-    function startSound() {
+    function startClient(groupIndex) {
 
         ws = new WebSocket(HOST);
         ws.onopen = function (event) {
+            group = groupIndex;
             uniqueId = getId(handShake)
             document.getElementById('net').innerHTML = 'websocket connection opened ';
             keepAlive();
@@ -88,7 +94,7 @@
         ws.onclose = function (event) {
             cancelKeepAlive();
         }
-        document.getElementById('start').remove();
+        document.getElementById('startButtons').remove();
         if (!state.playing)
             preparePlayer('0');
         else {
@@ -165,12 +171,12 @@
 
     //////////////////// LOCATION
 
-    function showPosition(position) {
+    /*function showPosition(position) {
         coords = position.coords;
         setCoords(coords);
         x.innerHTML = "Latitude: " + position.coords.latitude +
             "<br>Longitude: " + position.coords.longitude;
-    }
+    }*/
 </script>
 <script src="common.js"></script>
-<script src="geoloc.js"></script>
+<!--script src="geoloc.js"></script-->

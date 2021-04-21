@@ -23,7 +23,8 @@ function handShake(id) {
     message = {
         'new': {
             'type': role,
-            'id': id
+            'id': id,
+            'group': group
         }
     }
     ws.send(JSON.stringify(message));
@@ -44,14 +45,14 @@ function setBLs() {
             temp += 'solid 5px' +
                 (state.playing ? ' black' : ' gray');
         } else {
-            temp = 'none';
+            temp = 'solid 5px var(--bgcolor)';
         }
         document.getElementById('bl' + i).style.border = temp;
     }
 }
 
 //////////////////// LOCATION
-function getLocation() {
+/*function getLocation() {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(showPosition);
     } else {
@@ -59,4 +60,4 @@ function getLocation() {
     }
 }
 
-getLocation();
+getLocation();*/

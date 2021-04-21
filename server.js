@@ -40,9 +40,10 @@ wss.on('connection', (ws, req) => {
             storeNewClient(ws, obj.new);
             ws.send(JSON.stringify(state));
         }
-        if (obj.latitude) {
+        /*if (obj.latitude) {
             updateNezos(ws, obj);
-        } else if (obj.time !== undefined) {
+        } else */
+        if (obj.time !== undefined) {
             state = obj;
             nezos.forEach(nezo => {
                 nezo.ws.send(JSON.stringify(obj));
@@ -52,9 +53,10 @@ wss.on('connection', (ws, req) => {
 });
 
 class Client {
-    constructor(ws, id) {
+    constructor(ws, id, group) {
         this.ws = ws;
         this.id = id;
+        this.group = group;
     }
     setCoords(coords) {
         this.coords = coords;
@@ -64,22 +66,22 @@ class Client {
     }
 }
 
-function updateNezos(ws, coords) {
+/*function updateNezos(ws, coords) {
     nezos.forEach(nezo => {
         if (nezo.ws == ws) {
             nezo.setCoords(coords);
         }
     })
-}
+}*/
 
 function storeNewClient(ws, obj) {
     ///////kiszedni
     if (typeof obj.id != 'undefined') {
         var id = obj.id;
         if (obj.type == 'client') {
-            storeClient(ws, id, nezos);
+            storeClient(ws, id, obj.group, nezos);
         } else {
-            storeClient(ws, id);
+            storeClient(ws, id, obj.group);
         }
         sendClients();
     }
@@ -95,10 +97,10 @@ function sendClients() {
     }
 }
 
-function storeClient(ws, id, group) {
-    if (typeof group !== 'undefined') {
+function storeClient(ws, id, group, list) {
+    if (typeof list !== 'undefined') {
         let found = false;
-        group.forEach(member => {
+        list.forEach(member => {
             if (member.id == id) {
                 found = true;
                 if (member.ws != ws) {
@@ -107,7 +109,7 @@ function storeClient(ws, id, group) {
             }
         });
         if (!found) {
-            group.push(new Client(ws, id));
+            list.push(new Client(ws, id, group));
         }
     } else {
         if (control != null) {
@@ -115,7 +117,8 @@ function storeClient(ws, id, group) {
                 'server': 'already'
             }));
         } else {
-            control = new Client(ws, id);
+            control = new Client(ws, id, group);
+            sendClients();
         }
     }
 }
@@ -132,14 +135,14 @@ function removeClientFromAll(ws) {
     }
 }
 
-function removeClient(ws, group) {
-    if (typeof group !== 'undefined') {
-        group.forEach(el => {
+function removeClient(ws, list) {
+    if (typeof list !== 'undefined') {
+        list.forEach(el => {
             if (el.ws == ws) {
-                group.splice(group.indexOf(el), 1);
+                list.splice(list.indexOf(el), 1);
             }
         });
-    } else if (control.ws == ws) {
+    } else if (control != null && control.ws == ws) {
         control = null;
     }
     sendClients();
