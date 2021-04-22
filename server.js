@@ -77,7 +77,7 @@ function storeNewClient(ws, obj) {
 }
 
 function sendClients() {
-    console.log('send: ', nezos.length, nezos.map(x => x.id), control);
+    console.log('send: ', nezos.length, nezos.map(x => x.id), 'control', control.id);
     if (control != null) {
         control.ws.send(JSON.stringify({
             'clients': nezos.length,
