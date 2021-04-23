@@ -108,6 +108,7 @@
         }
 
         ws.onclose = function (event) {
+            console.log('CONNECTION LOST');
             cancelKeepAlive();
         }
     }
@@ -138,12 +139,13 @@
         } else {
             if (c.time < myAudio.duration) {
                 setSpeed(c.time);
-                state.playing = c.playing;
-                var command = c.playing ? 'start' : 'stop';
-                doPlay(command).then(_ => {
-                    nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
-                    updateColoredDivs();
-                });
+                if (state.playing != c.playing) {
+                    var command = c.playing ? 'start' : 'stop';
+                    doPlay(command).then(_ => {
+                        nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
+                        updateColoredDivs();
+                    });
+                }
             }
         }
     }

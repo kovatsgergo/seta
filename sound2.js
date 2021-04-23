@@ -41,10 +41,6 @@ document.getElementById('clearCookies').addEventListener('click', function () {
     localforage.clear();
 })
 
-function deleteFiles() {
-
-}
-
 function setBoxColor(ind, ended) {
     document.getElementById('bl' + ind).style.backgroundColor = ended ? 'orange' : 'green';
 }

@@ -59,6 +59,14 @@ function updateColoredDivs() {
     }
 }
 
+window.addEventListener('offline', function(event){
+    console.log("You lost connection.");
+});
+window.addEventListener('online', function(event){
+    console.log("You are now back online.");
+    prepareWebSocket(state.group);
+});
+
 //////////////////// LOCK SCREEN CONTROL DISABLE
 if (navigator.mediaSession) {
     navigator.mediaSession.setActionHandler('play', function () {
@@ -83,7 +91,6 @@ function onLoadOrCanplay(){
     updateTimeText();
     updateColoredDivs();
     nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
-    console.log('after onloaded', stateForLoad, state, myAudio.currentTime, myAudio.duration);
 }
 
 if(iOS()){
@@ -93,11 +100,11 @@ myAudio.addEventListener('loadedmetadata', onLoadOrCanplay);
 
 var allevents = ['canplay', 'canplaythrough', 'loadeddata', 'loadedmetadata', 'seeking', 'seeked', 'timeupdate'];
 
-allevents.forEach(ev => {
+/*allevents.forEach(ev => {
     myAudio.addEventListener(ev, function () {
         console.log(ev);
     })
-});
+});*/
 /*myAudio.onloadedmetadata = function () {
     console.log('onloadedmetadata', stateForLoad, state, myAudio.currentTime, myAudio.duration);
     state = {

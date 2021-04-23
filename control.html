@@ -82,6 +82,7 @@
     var uniqueId;
 
     function startClient(groupIndex) {
+        console.log('STARTCLIENT', groupIndex);
 
         myAudio.play().then(_ => {
             myAudio.pause();
@@ -109,7 +110,7 @@
 
         ws.onmessage = function (event) {
             net.innerHTML = event.data;
-            console.log(event.data);
+            console.log('MESSAGE',event.data);
             c = JSON.parse(event.data);
             if (c.clients !== undefined) {
                 nrclients.innerHTML = c.clients;
