@@ -13,7 +13,11 @@
     <h2>Néző</h2>
     <!--div id="mapid"></div-->
     <div id="unique">unique id: </div>
-    <h3 id="groupText">csoport: </h3>
+    <div>
+        <h3 id="groupText">csoport: </h3>
+        <button id="clearCookies">hangfájlok törlése</button>
+    </div>
+    <span id="loaded"></span>
     <div>kiválasztott track: <span id="nowplaying"></span></div>
     <h4>Itt láthatók a parancsok a vezérlőtől</h4>
     <div id="net">net messages</div>
@@ -76,10 +80,15 @@
     function startClient(groupIndex) {
         myAudio.play().then(_ => {
             myAudio.pause();
+            prepareWebSocket(groupIndex);
         });
 
         noSleep.enable();
 
+        document.getElementById('startButtons').remove();
+    }
+
+    function prepareWebSocket(groupIndex) {
         ws = new WebSocket(HOST);
         ws.onopen = function (event) {
             state.group = groupIndex;
@@ -101,8 +110,6 @@
         ws.onclose = function (event) {
             cancelKeepAlive();
         }
-
-        document.getElementById('startButtons').remove();
     }
 
     //////////////////////////////////////////// AUDIO CONTROL

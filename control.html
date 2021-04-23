@@ -12,7 +12,10 @@
 <body>
     <h1>Vezérlő</h1>
     <div id="unique">unique id: </div>
-    <h3 id="groupText">csoport: </h3>
+    <div>
+        <h3 id="groupText">csoport: </h3>
+        <button id="clearCookies">hangfájlok törlése</button>
+    </div>
     <div id="allStart">
         <button onclick="playItC('start', 0)">start 1</button>
         <button onclick="playItC('start', 1)">start 2</button>
@@ -22,6 +25,7 @@
     <div id="allStop">
         <button onclick="playItC('stop')" id="pausebutton">PAUSE</button>
     </div>
+    <span id="loaded"></span>
     <div>kiválasztott track: <span id="nowplaying"></span></div>
     <h4>Csatlakozott kliensek száma: <span id="nrclients"></span></h4>
     <h4>Itt láthatók az üzenetek a szervertől</h4>

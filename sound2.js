@@ -16,15 +16,33 @@ function loadAllFiles() {
                         localforage.setItem('f' + i, blob)
                     })
                     .then(_ => {
-                        //loaded.innerHTML += '<br>' + urls[i] + ' is successfully stored'; //document.getElementById('loaded')
+                        loaded.innerHTML += ' '+i + '–newly_stored'; //document.getElementById('loaded')
                         setBoxColor(i);
                     });
             } else {
-                //loaded.innerHTML += '<br>' + urls[i] + ' is already stored';
+                loaded.innerHTML += ' '+i + '–already_stored';
                 setBoxColor(i);
             }
         });
     }
+}
+
+document.getElementById('clearCookies').addEventListener('click', function () {
+    console.log('deletefiles');
+    for (let i = 0; i < urls.length; i++) {
+        localforage.removeItem('f' + i).then(function () {
+            // Run this code once the key has been removed.
+            console.log('Key is cleared!');
+        }).catch(function (err) {
+            // This code runs if there were any errors
+            console.log(err);
+        });
+    }
+    localforage.clear();
+})
+
+function deleteFiles() {
+
 }
 
 function setBoxColor(ind, ended) {
