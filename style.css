@@ -23,7 +23,7 @@ h3{
     display: inline;
 }
 
-#unique{
+.unique{
     float: right;
     position: absolute;
     right: 10;

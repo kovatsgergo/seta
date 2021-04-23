@@ -12,9 +12,9 @@
 <body>
     <h2>Néző</h2>
     <!--div id="mapid"></div-->
-    <div id="unique">unique id: </div>
+    <div class="unique">unique id: <span id="unique"></span></div>
     <div>
-        <h3 id="groupText">csoport: </h3>
+        <h3>csoport: <span id="groupText"></span></h3>
         <button id="clearCookies">hangfájlok törlése</button>
     </div>
     <span id="loaded"></span>
@@ -92,7 +92,7 @@
         ws = new WebSocket(HOST);
         ws.onopen = function (event) {
             state.group = groupIndex;
-            groupText.innerHTML += '' + (groupIndex + 1);
+            groupText.innerHTML = '' + (groupIndex + 1);
             uniqueId = getId(handShake)
             document.getElementById('net').innerHTML = 'websocket connection opened ';
             keepAlive();

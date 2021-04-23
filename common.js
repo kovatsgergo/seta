@@ -1,4 +1,4 @@
-function iOS() {
+/*function iOS() {
     return [
             'iPad Simulator',
             'iPhone Simulator',
@@ -10,7 +10,10 @@ function iOS() {
         // iPad on iOS 13 detection
         ||
         (navigator.userAgent.includes("Mac") && "ontouchend" in document)
-}
+}*/
+
+let isIOS = /iPad|iPhone|iPod/.test(navigator.platform)
+|| (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
 
 
 ////////////////////////////////////////// DOESN'T ALLOW APP TO SLEEP?
@@ -43,7 +46,7 @@ function handShake(id) {
         }
     }
     ws.send(JSON.stringify(message));
-    unique.innerHTML += id;
+    unique.innerHTML = '' + id;
 }
 
 function updateColoredDivs() {
@@ -59,10 +62,10 @@ function updateColoredDivs() {
     }
 }
 
-window.addEventListener('offline', function(event){
+window.addEventListener('offline', function (event) {
     console.log("You lost connection.");
 });
-window.addEventListener('online', function(event){
+window.addEventListener('online', function (event) {
     console.log("You are now back online.");
     prepareWebSocket(state.group);
 });
@@ -80,7 +83,7 @@ if (navigator.mediaSession) {
     });
 }
 
-function onLoadOrCanplay(){
+function onLoadOrCanplay() {
     console.log('onloadedmetadata', stateForLoad, state, myAudio.currentTime, myAudio.duration);
     state = {
         ...stateForLoad
@@ -93,9 +96,10 @@ function onLoadOrCanplay(){
     nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
 }
 
-if(iOS()){
+if (isIOS) {
     myAudio.addEventListener('canplay', onLoadOrCanplay);
 }
+
 myAudio.addEventListener('loadedmetadata', onLoadOrCanplay);
 
 var allevents = ['canplay', 'canplaythrough', 'loadeddata', 'loadedmetadata', 'seeking', 'seeked', 'timeupdate'];
@@ -105,16 +109,3 @@ var allevents = ['canplay', 'canplaythrough', 'loadeddata', 'loadedmetadata', 's
         console.log(ev);
     })
 });*/
-/*myAudio.onloadedmetadata = function () {
-    console.log('onloadedmetadata', stateForLoad, state, myAudio.currentTime, myAudio.duration);
-    state = {
-        ...stateForLoad
-    };
-    myAudio.currentTime = state.time;
-    bar.style.width = parseInt(((myAudio.currentTime / myAudio.duration) * 100), 10) + "%";
-    console.log('after onloaded', stateForLoad, state, myAudio.currentTime, myAudio.duration);
-    updateTimeText();
-    updateColoredDivs();
-    nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
-    console.log('after onloaded', stateForLoad, state, myAudio.currentTime, myAudio.duration);
-};*/
