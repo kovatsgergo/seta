@@ -1,7 +1,7 @@
 var players = [];
 //var urls = ['IGNAC_TRACK1.mp3', 'IGNAC_TRACK2.mp3', 'IGNAC_TRACK3.mp3', 'IGNAC_TRACK4.mp3']
-//var urls = ['IGNAC_TRACK1.m4a', 'IGNAC_TRACK2.m4a', 'IGNAC_TRACK3.m4a', 'IGNAC_TRACK4.m4a']
-var urls = ['IGNAC_TRACK1SR.m4a', 'IGNAC_TRACK2SR.m4a', 'IGNAC_TRACK3SR.m4a', 'IGNAC_TRACK4SR.m4a']
+var urls = ['IDOVONAL_TRACK1.m4a', 'IDOVONAL_TRACK2.m4a', 'IDOVONAL_TRACK3.m4a', 'IDOVONAL_TRACK4.m4a']
+//var urls = ['IGNAC_TRACK1SR.m4a', 'IGNAC_TRACK2SR.m4a', 'IGNAC_TRACK3SR.m4a', 'IGNAC_TRACK4SR.m4a']
 //var urls = ['test1.mp3', 'test2.mp3', 'test3.mp3', 'test4.mp3']
 
 window.onload = loadAllFiles();
