@@ -37,7 +37,9 @@ function preparePlayer(ind) {
         console.log(blob);
         if (blob) {
             console.log('bloooob', URL.createObjectURL(blob));
+            /// THIS FIRES TIMEUPDATE (currentTime = 0)
             myAudio.setAttribute('src', URL.createObjectURL(blob));
+            //myAudio.load();
             console.log('ind ' + ind);
             myAudio.index = ind;
         }
@@ -65,6 +67,10 @@ function playIt(func, ind, prom) {
 function doPlay(func) {
     if (func === 'start') {
         console.log('START');
+        //console.log('startstate', state);
+        //console.log('startcurrtime', myAudio.currentTime);
+        //myAudio.currentTime = state.time;
+        //console.log('startcurrtime 2', myAudio.currentTime);
         return myAudio.play();
     }
 

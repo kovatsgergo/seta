@@ -12,6 +12,7 @@
 <body>
     <h1>Vezérlő</h1>
     <div id="unique">unique id: </div>
+    <h3 id="groupText">csoport: </h3>
     <div id="allStart">
         <button onclick="playItC('start', 0)">start 1</button>
         <button onclick="playItC('start', 1)">start 2</button>
@@ -32,7 +33,7 @@
         <div class="block" id="bl2">3</div>
         <div class="block" id="bl3">4</div>
     </div>
-    <audio id="myaudio" preload="auto" type="audio/x-m4a">
+    <audio id="myaudio" preload="auto" type="audio/x-m4a" preload="auto" src="temp.m4a">
         Your browser does not support the audio element.
     </audio>
     <div id="progress">
@@ -51,17 +52,24 @@
 
 <script>
     var role = 'control';
-    var group = -1;
 
     var x = document.getElementById("demo");
     var watcher = document.getElementById('watcher');
     var closeTo = document.getElementById('closeTo');
     var myAudio = document.getElementById('myaudio');
-    var coords;
+
     var state = {
         'index': -1,
-        'time': -1.0,
-        'playing': false
+        'time': 0,
+        'playing': false,
+        'group': -1
+    }
+
+    var stateForLoad = {
+        'index': -1,
+        'time': 0,
+        'playing': false,
+        'group': -1
     }
 
     ////////////////////////////////////////////// WebSocket
@@ -69,13 +77,27 @@
     var ws;
     var uniqueId;
 
-    ///////////////////////////////////////////// Geolocation, Sound
-
     function startClient(groupIndex) {
-        ws = new WebSocket(HOST);
 
+        myAudio.play().then(_ => {
+            myAudio.pause();
+            //preparePlayer(0).then(_ => {
+            prepareWebSocket(groupIndex);
+            //console.log(groupIndex);
+            //});
+            console.log('FIRST PLAY trick');
+        });
+
+        document.getElementById('startButtons').remove();
+        //noSleep.enable();
+    }
+
+    function prepareWebSocket(groupIndex) {
+        ws = new WebSocket(HOST);
         ws.onopen = function (event) {
-            group = groupIndex;
+            console.log('onopen');
+            state.group = groupIndex;
+            groupText.innerHTML += '' + (groupIndex + 1);
             uniqueId = getId(handShake)
             document.getElementById('net').innerHTML = 'websocket connection opened ';
             keepAlive();
@@ -91,7 +113,7 @@
             } else if (c.time !== undefined) {
                 setupSoundState(c);
             } else if (c.server) {
-                alert('Már van kontrol');
+                alert('Már van vezérlő ebben a csoportban');
                 window.location.href = "/";
             }
         }
@@ -99,15 +121,19 @@
         ws.onclose = function (event) {
             cancelKeepAlive();
         }
-        document.getElementById('startButtons').remove();
-        preparePlayer('0');
-        noSleep.enable();
+
     }
 
+    //////////////////////////////////////////// AUDIO CONTROL
     function playItC(func, ind = -1) {
+        console.log('playitC', func, ind, state);
         state.playing = func == 'start';
         if (ind > -1) {
+            if (state.index != ind) {
+                state.time = 0;
+            }
             state.index = ind;
+            stateForLoad = state;
             playIt(func, ind, true).then(_ => {
                 ws.send(JSON.stringify(state));
             });
@@ -116,37 +142,58 @@
                 ws.send(JSON.stringify(state));
             });
         }
-        setBLs()
+        updateColoredDivs()
         nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
-
     }
 
     function setupSoundState(c) {
-        console.log(state, c);
-        state = c;
-        setBLs()
-        nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
-        //console.log('THIS');
+        console.log('setupSoundState', state, c);
+        //console.log('state after: ', state);
+        updateColoredDivs();
         preparePlayer(c.index).then(_ => {
-            //console.log('PREPARED');
-            if (c.playing) {
-                myAudio.currentTime = c.time;
-                doPlay('start');
-            }
+            stateForLoad = {
+                ...c
+            };
+            state = {
+                ...c
+            };
+            //console.log('PREPARED', c);
+            //console.log(state.time, myAudio.currentTime);
+            // EZ ITT NEM ER SEMMIT, MERT MEG NEM TOLTODOTT BE
+            //myAudio.currentTime = state.time;
+            //console.log('PREPARED after', state, myAudio.currentTime);
+            //state.playing = c.playing;
         });
     }
+
     var lastTime = -1;
 
-    //////////////////////////////////////////// AUDIO CONTROL
-    myAudio.addEventListener('timeupdate', function () {
-        //sets the percentage
+    function timeUpdate() {
+        //console.log('TIME UPDATE', state, myAudio.currentTime, myAudio.duration);
         state.time = myAudio.currentTime;
+        //console.log('TIME UPDATE after', state, myAudio.currentTime, myAudio.duration);
+        //sets the percentage
         bar.style.width = parseInt(((myAudio.currentTime / myAudio.duration) * 100), 10) + "%";
+        // sends current time to server for syncing
         if (Math.abs(myAudio.currentTime - lastTime) > 3) {
             ws.send(JSON.stringify(state));
             lastTime = myAudio.currentTime;
         }
+        updateTimeText();
+    }
+
+    myAudio.addEventListener('timeupdate', function () {
+        timeUpdate();
+    });
+
+    function updateTimeText() {
         currTime.innerHTML = '' + myAudio.currentTime.toFixed(2) + '/' + myAudio.duration.toFixed(2);
+    }
+
+    myAudio.addEventListener('progress', ev => {
+        if (state.playing) {
+            doPlay('start');
+        }
     });
 
     myAudio.addEventListener("ended", function () {
@@ -155,6 +202,7 @@
         lastTime = myAudio.currentTime;
         setBoxColor(myAudio.index, true);
         state.playing = false;
+        console.log('ended');
     });
 
     progress.addEventListener('click', function (e) {
@@ -166,6 +214,7 @@
         myAudio.currentTime = clickTime;
         lastTime = clickTime;
         state.time = clickTime;
+        timeUpdate();
         ws.send(JSON.stringify(state));
     });
 </script>

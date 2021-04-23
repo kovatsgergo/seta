@@ -13,6 +13,7 @@
     <h2>Néző</h2>
     <!--div id="mapid"></div-->
     <div id="unique">unique id: </div>
+    <h3 id="groupText">csoport: </h3>
     <div>kiválasztott track: <span id="nowplaying"></span></div>
     <h4>Itt láthatók a parancsok a vezérlőtől</h4>
     <div id="net">net messages</div>
@@ -23,7 +24,7 @@
         <div class="block" id="bl2">3</div>
         <div class="block" id="bl3">4</div>
     </div>
-    <audio id="myaudio" preload="auto" type="audio/x-m4a">
+    <audio id="myaudio" preload="auto" type="audio/x-m4a" preload="metadata" src="temp.m4a">
         Your browser does not support the audio element.
     </audio>
     <div id="progress">
@@ -39,17 +40,24 @@
 
 <script>
     var role = 'client';
-    var group = -1;
 
     var x = document.getElementById("demo");
     var watcher = document.getElementById('watcher');
     var closeTo = document.getElementById('closeTo');
     var myAudio = document.getElementById('myaudio');
-    var coords;
+
     var state = {
         'index': -1,
-        'time': -1,
-        'playing': false
+        'time': 0,
+        'playing': false,
+        'group': -1
+    }
+
+    var stateForLoad = {
+        'index': -1,
+        'time': 0,
+        'playing': false,
+        'group': -1
     }
 
     ////////////////////////////////////////////// WebSocket
@@ -65,13 +73,17 @@
         ws.send(JSON.stringify(temp));
     }
 
-    ///////////////////////////////////////////// Geolocation, Sound
-
     function startClient(groupIndex) {
+        myAudio.play().then(_ => {
+            myAudio.pause();
+        });
+
+        noSleep.enable();
 
         ws = new WebSocket(HOST);
         ws.onopen = function (event) {
-            group = groupIndex;
+            state.group = groupIndex;
+            groupText.innerHTML += '' + (groupIndex + 1);
             uniqueId = getId(handShake)
             document.getElementById('net').innerHTML = 'websocket connection opened ';
             keepAlive();
@@ -79,8 +91,8 @@
 
         ws.onmessage = function (event) {
             c = JSON.parse(event.data);
+            console.log('message', c);
             if (c.time !== undefined) {
-                //state = c;
                 setupSoundState(c);
             }
             net.innerHTML = event.data;
@@ -89,41 +101,30 @@
         ws.onclose = function (event) {
             cancelKeepAlive();
         }
+
         document.getElementById('startButtons').remove();
-        if (!state.playing)
-            preparePlayer('0');
-        else {
-            setupSoundState(state);
-        }
-        myAudio.play().then(_=>{
-            myAudio.pause();
-        });
-        
-        noSleep.enable();
     }
 
+    //////////////////////////////////////////// AUDIO CONTROL
     function setupSoundState(c) {
-        console.log(state, c);
+        console.log('setupsoundstate', state, c);
         if (!c.playing) {
             doPlay('stop').then(_ => {
-                if (c.time != state.time) {
-                    myAudio.currentTime = Math.min(c.time, myAudio.duration);
-                }
+                myAudio.currentTime = c.time;
                 state = c;
                 nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
-                setBLs();
+                updateColoredDivs();
             });
         }
         if (state.index != c.index) {
-            //console.log('THIS');
             preparePlayer(c.index).then(_ => {
-                //console.log('PREPARED');
                 setSpeed(c.time);
+                state = c;
+                stateForLoad = c;
                 if (c.playing) {
                     doPlay('start').then(_ => {
-                        state = c;
                         nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
-                        setBLs();
+                        updateColoredDivs();
                     });
                 }
             });
@@ -134,18 +135,20 @@
                 var command = c.playing ? 'start' : 'stop';
                 doPlay(command).then(_ => {
                     nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
-                    setBLs();
+                    updateColoredDivs();
                 });
             }
         }
     }
 
     function setSpeed(time2) {
-        var diff = time2 - state.time;
+        var diff = time2 - myAudio.currentTime;
         console.log('diff ', diff);
-        if (Math.abs(time2 - state.time) > 15) {
+        if (Math.abs(diff) > 15) {
+            console.log('so this', time2, myAudio.currentTime, myAudio.duration);
             myAudio.currentTime = time2;
             myAudio.playbackRate = 1;
+            console.log('so that', time2, myAudio.currentTime, myAudio.duration);
         } else if (diff > 1) {
             myAudio.playbackRate = 1.25;
         } else if (diff < -1) {
@@ -158,14 +161,20 @@
     myAudio.addEventListener('timeupdate', function () {
         //sets the percentage
         bar.style.width = parseInt(((myAudio.currentTime / myAudio.duration) * 100), 10) + "%";
-        state.time = myAudio.currentTime;
-        currTime.innerHTML = '' + myAudio.currentTime.toFixed(2) + '/' + myAudio.duration.toFixed(2);
+        if (myAudio.currTime > state.time)
+            state.time = myAudio.currentTime;
+        updateTimeText();
     });
 
+    function updateTimeText() {
+        currTime.innerHTML = '' + myAudio.currentTime.toFixed(2) + '/' + myAudio.duration.toFixed(2);
+    }
+
     myAudio.addEventListener("ended", function () {
+        console.log('ENDED');
         state.playing = false;
-        //lastTime = myAudio.currentTime;
         setBoxColor(myAudio.index, true);
+        console.log('ended');
     });
 </script>
 <script src="sound2.js"></script>

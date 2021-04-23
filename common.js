@@ -24,14 +24,14 @@ function handShake(id) {
         'new': {
             'type': role,
             'id': id,
-            'group': group
+            'group': state.group
         }
     }
     ws.send(JSON.stringify(message));
     unique.innerHTML += id;
 }
 
-function setBLs() {
+function updateColoredDivs() {
     for (let i = 0; i < 4; i++) {
         temp = ''
         if (state.index == i) {
@@ -57,13 +57,16 @@ if (navigator.mediaSession) {
     });
 }
 
-//////////////////// LOCATION
-/*function getLocation() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(showPosition);
-    } else {
-        x.innerHTML = "Geolocation is not supported by this browser.";
-    }
-}
-
-getLocation();*/
+myAudio.onloadedmetadata = function () {
+    console.log('onloadedmetadata', stateForLoad, state, myAudio.currentTime, myAudio.duration);
+    state = {
+        ...stateForLoad
+    };
+    myAudio.currentTime = state.time;
+    bar.style.width = parseInt(((myAudio.currentTime / myAudio.duration) * 100), 10) + "%";
+    console.log('after onloaded', stateForLoad, state, myAudio.currentTime, myAudio.duration);
+    updateTimeText();
+    updateColoredDivs();
+    nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
+    console.log('after onloaded', stateForLoad, state, myAudio.currentTime, myAudio.duration);
+};
