@@ -37,6 +37,9 @@
         <span id="currTime"></span>
     </div>
     <h4>Csatlakozott kliensek száma: <span id="nrclients"></span></h4>
+    <div id="exitrow">
+        <button onclick="location.reload()" id="exitButton">EXIT</button>
+    </div>
 </body>
 
 <script>
@@ -259,7 +262,7 @@
         }
     }
 
-    myAudio.oncanplaythrough = function() {
+    myAudio.oncanplaythrough = function () {
         console.log('oncanplay', myAudio.duration, tempMessage, tempMessage.time);
         if (typeof tempMessage.time !== 'undefined' && myAudio.duration > 1) {
             console.log('ehhh');
@@ -293,13 +296,34 @@
     function updateTimeDisplay() {
         //sets the percentage
         bar.style.width = parseInt(((myAudio.currentTime / myAudio.duration) * 100), 10) + "%";
-        currTime.innerHTML = '' + myAudio.currentTime.toFixed(2) + ' / ' + myAudio.duration.toFixed(2);
+        currTime.innerHTML = convertToMinutes(myAudio.currentTime) + ' / ' + convertToMinutes(myAudio.duration);
         if (myAudio.currentTime >= myAudio.duration) {
             var elem = document.getElementById('bl' + myAudio.index)
             elem.style.backgroundColor = 'lightgreen';
             elem.style.color = 'gray';
             updateColoredDivs();
         }
+    }
+
+    function convertToMinutes(time) {
+        var mins = Math.floor(time / 60);
+        var minutes = '';
+        if (mins < 10) {
+            minutes = '0' + mins;
+        } else {
+            minutes = '' + mins;
+        }
+        var secs = Math.floor(time) % 60;
+        var seconds = '';
+        if (secs < 10) {
+            seconds = '0' + secs;
+        } else {
+            seconds = '' + secs;
+        }
+        var mils = Math.floor((time % 1) * 100);
+        var millis = '';
+        millis = (mils < 10) ? '0' + mils : '' + mils;
+        return minutes + ':' + seconds + '.' + millis;
     }
 
     function updateColoredDivs() {
