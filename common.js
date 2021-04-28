@@ -12,8 +12,8 @@
         (navigator.userAgent.includes("Mac") && "ontouchend" in document)
 }*/
 
-let isIOS = /iPad|iPhone|iPod/.test(navigator.platform)
-|| (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+let isIOS = /iPad|iPhone|iPod/.test(navigator.platform) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
 
 
 ////////////////////////////////////////// DOESN'T ALLOW APP TO SLEEP?
@@ -65,6 +65,7 @@ function updateColoredDivs() {
 window.addEventListener('offline', function (event) {
     console.log("You lost connection.");
 });
+
 window.addEventListener('online', function (event) {
     console.log("You are now back online.");
     prepareWebSocket(state.group);
@@ -84,16 +85,22 @@ if (navigator.mediaSession) {
 }
 
 function onLoadOrCanplay() {
-    console.log('onloadedmetadata', stateForLoad, state, myAudio.currentTime, myAudio.duration);
-    state = {
-        ...stateForLoad
-    };
-    myAudio.currentTime = state.time;
-    bar.style.width = parseInt(((myAudio.currentTime / myAudio.duration) * 100), 10) + "%";
-    console.log('after onloaded', stateForLoad, state, myAudio.currentTime, myAudio.duration);
-    updateTimeText();
-    updateColoredDivs();
-    nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
+    if (myAudio.src.startsWith('blob')) {
+        console.log('onloadedmetadata', stateForLoad, state, myAudio.currentTime, myAudio.duration);
+        state = {
+            ...stateForLoad
+        };
+        myAudio.currentTime = state.time;
+        if (state.timeStamp != undefined && state.playing == true) {
+            console.log(Date.now(), state.timeStamp, (Date.now() - state.timeStamp) / 1000);
+            myAudio.currentTime += (Date.now() - state.timeStamp) / 1000;
+        }
+        bar.style.width = parseInt(((myAudio.currentTime / myAudio.duration) * 100), 10) + "%";
+        console.log('after onloaded', stateForLoad, state, myAudio.currentTime, myAudio.duration);
+        updateTimeText();
+        updateColoredDivs();
+        nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
+    }
 }
 
 if (isIOS) {

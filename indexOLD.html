@@ -1,0 +1,187 @@
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=400, initial-scale=1.0">
+    <link rel="shortcut icon" type="image/png" href="/faviconCli.png" />
+    <title>Idővnal néző</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.rawgit.com/localForage/localForage/4ce19202/dist/localforage.min.js"></script>
+    <script src="uniqueMe.js"></script>
+    <script src="NoSleep.js"></script>
+</head>
+
+<body>
+    <h2>Néző</h2>
+    <!--div id="mapid"></div-->
+    <div class="unique">unique id: <span id="unique"></span></div>
+    <div>
+        <h3>csoport: <span id="groupText"></span></h3>
+        <button id="clearCookies">hangfájlok törlése</button>
+    </div>
+    <span id="loaded"></span>
+    <div>kiválasztott track: <span id="nowplaying"></span></div>
+    <h4>Itt láthatók a parancsok a vezérlőtől</h4>
+    <div id="net">net messages</div>
+    <h4>Hangfájlok státusza</h4>
+    <div class="row">
+        <div class="block" id="bl0">1</div>
+        <div class="block" id="bl1">2</div>
+        <div class="block" id="bl2">3</div>
+        <div class="block" id="bl3">4</div>
+    </div>
+    <audio id="myaudio" preload="auto" type="audio/x-m4a" preload="metadata" src="temp.m4a">
+        Your browser does not support the audio element.
+    </audio>
+    <div id="progress">
+        <div id="bar"></div>
+        <span id="currTime"></span>
+    </div>
+    <div id="startButtons">
+        <button class="full" id="start1" onclick="startClient(0)">1-es csoport</button>
+        <button class="full" id="start2" onclick="startClient(1)">2-es csoport</button>
+        <button class="full" id="start3" onclick="startClient(2)">3-as csoport</button>
+    </div>
+</body>
+
+<script>
+    var role = 'client';
+
+    var x = document.getElementById("demo");
+    var watcher = document.getElementById('watcher');
+    var closeTo = document.getElementById('closeTo');
+    var myAudio = document.getElementById('myaudio');
+
+    var state = {
+        'index': -1,
+        'time': 0,
+        'playing': false,
+        'group': -1
+    }
+
+    var stateForLoad = {
+        'index': -1,
+        'time': 0,
+        'playing': false,
+        'group': -1
+    }
+
+    ////////////////////////////////////////////// WebSocket
+    var HOST = location.origin.replace(/^http/, 'ws');
+    var ws;
+    var uniqueId;
+
+    function startClient(groupIndex) {
+        myAudio.play().then(_ => {
+            myAudio.pause();
+            prepareWebSocket(groupIndex);
+        });
+
+        noSleep.enable();
+
+        document.getElementById('startButtons').remove();
+    }
+
+    function prepareWebSocket(groupIndex) {
+        ws = new WebSocket(HOST);
+        ws.onopen = function (event) {
+            state.group = groupIndex;
+            groupText.innerHTML = '' + (groupIndex + 1);
+            uniqueId = getId(handShake)
+            document.getElementById('net').innerHTML = 'websocket connection opened ';
+            keepAlive();
+        }
+
+        ws.onmessage = function (event) {
+            c = JSON.parse(event.data);
+            console.log('message', c);
+            if (c.time !== undefined) {
+                setupSoundState(c);
+            }
+            net.innerHTML = event.data;
+        }
+
+        ws.onclose = function (event) {
+            console.log('CONNECTION LOST');
+            cancelKeepAlive();
+        }
+    }
+
+    //////////////////////////////////////////// AUDIO CONTROL
+    function setupSoundState(c) {
+        console.log('setupsoundstate', state, c);
+        if (!c.playing) {
+            ////////////////////// not playing
+            doPlay('stop').then(_ => {
+                myAudio.currentTime = c.time;
+                state = c;
+                nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
+                updateColoredDivs();
+            });
+        }
+        if (state.index != c.index) {
+            ////////////////////// different track
+            preparePlayer(c.index).then(_ => {
+                setSpeed(c.time);
+                state = c;
+                stateForLoad = c;
+                if (c.playing) {
+                    doPlay('start').then(_ => {
+                        nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
+                        updateColoredDivs();
+                    });
+                }
+            });
+        } else {
+            ////////////////////// playing, same track
+            if (c.playing && c.time < myAudio.duration) {
+                setSpeed(c.time + (Date.now() - c.timeStamp) / 1000);
+                if (state.playing != c.playing) {
+                    var command = c.playing ? 'start' : 'stop';
+                    state = c;
+                    doPlay(command).then(_ => {
+                        nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
+                        updateColoredDivs();
+                    });
+                }
+            }
+        }
+    }
+
+    function setSpeed(time2) {
+        var diff = time2 - myAudio.currentTime;
+        console.log('diff ', diff);
+        if (Math.abs(diff) > 15) {
+            console.log('so this', time2, myAudio.currentTime, myAudio.duration);
+            myAudio.currentTime = time2;
+            myAudio.playbackRate = 1;
+            console.log('so that', time2, myAudio.currentTime, myAudio.duration);
+        }
+        /* else if (diff > 1) {
+                    myAudio.playbackRate = 1.25;
+                } else if (diff < -1) {
+                    myAudio.playbackRate = 0.8;
+                } else {
+                    myAudio.playbackRate = 1;
+                }*/
+    }
+
+    myAudio.addEventListener('timeupdate', function () {
+        //sets the percentage
+        bar.style.width = parseInt(((myAudio.currentTime / myAudio.duration) * 100), 10) + "%";
+        if (myAudio.currTime > state.time)
+            state.time = myAudio.currentTime;
+        updateTimeText();
+    });
+
+    function updateTimeText() {
+        currTime.innerHTML = '' + myAudio.currentTime.toFixed(2) + '/' + myAudio.duration.toFixed(2);
+    }
+
+    myAudio.addEventListener("ended", function () {
+        console.log('ENDED');
+        state.playing = false;
+        setBoxColor(myAudio.index, true);
+        console.log('ended');
+    });
+</script>
+<script src="sound2.js"></script>
+<script src="common.js"></script>

@@ -1,0 +1,130 @@
+:root {
+    --maxwidth: 600px;
+
+    --bgcolor: white;
+}
+
+body {
+    width: 100%;
+    max-width: var(--maxwidth);
+    /*font-family: Verdana, sans-serif;*/
+    /*font-family: "Andale Mono", AndaleMono, monospace;*/
+    font-family: 'Roboto', sans-serif;
+    background-color: var(--bgcolor);
+    margin: auto;
+}
+
+h4 {
+    margin-top: 10px;
+    margin-bottom: 0px;
+}
+
+h3{
+    display: inline;
+}
+
+.unique{
+    float: right;
+    position: absolute;
+    right: 10;
+    top: 10px;
+}
+
+#clearCookies{
+    position:absolute;
+    font-size: 1em;
+    right: 0;
+}
+
+#allStart{
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+#allStart *{
+    margin: 5px;
+}
+
+#allStop, #exitrow{
+    margin: 10px;
+    text-align: center;
+}
+
+#exitButton{
+    background-color: darkred;
+    color: white;
+    position: absolute;
+    left:40%;
+    bottom: 5px;
+}
+
+#pauseButton{
+    width: 50%;
+    margin: auto;
+}
+
+#nrclients {
+    font-weight: normal;
+}
+
+.full {
+    width: 100%;
+    height: 33.33%;
+    position: absolute;
+    left: 0;
+    z-index: 1000;
+}
+
+#start1 {
+    top: 0;
+}
+
+#start2 {
+    top: 33%;
+}
+
+#start3 {
+    top: 66%;
+}
+
+button {
+    font-size: 1.5em;
+    background-color: lightgray;
+}
+
+.row {
+    text-align: center;
+    margin: auto;
+    display: table;
+}
+
+.block {
+    display: table-cell;
+    width: calc(100vw / 4 - 20px);
+    height: calc(100vw / 4 - 20px);
+    max-height: 105px;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 25px;
+    color: white;
+    border: solid 5px var(--bgcolor);
+    border-radius: 5px;
+    margin: 0;
+    background-color: gray;
+    /*calc((100vw / 5 - 60px) / 8);*/
+}
+
+#progress {
+    background-color: white;
+    width: calc(100% - 50px);
+    margin: auto;
+    margin-top: 20px;
+    border: 1px solid black;
+    border-radius: 5px;
+}
+
+#bar {
+    height: 20px;
+    background-color: #222;
+    width: 0;
+}

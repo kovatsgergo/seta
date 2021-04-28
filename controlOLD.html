@@ -1,0 +1,232 @@
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=400, initial-scale=1.0">
+    <link rel="shortcut icon" type="image/png" href="/faviconContr.png" />
+    <title>Idővonal Vezérlő</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.rawgit.com/localForage/localForage/4ce19202/dist/localforage.min.js"></script>
+    <script src="uniqueMe.js"></script>
+    <script src="NoSleep.js"></script>
+</head>
+
+<body>
+    <h1>Vezérlő</h1>
+    <div class="unique">unique id: <span id="unique"></span></div>
+    <div>
+        <h3>csoport: <span id="groupText"></span></h3>
+        <button id="clearCookies">hangfájlok törlése</button>
+    </div>
+    <div id="allStart">
+        <button onclick="playItC('start', 0)">start 1</button>
+        <button onclick="playItC('start', 1)">start 2</button>
+        <button onclick="playItC('start', 2)">start 3</button>
+        <button onclick="playItC('start', 3)">start 4</button>
+    </div>
+    <div id="allStop">
+        <button onclick="playItC('stop')" id="pausebutton">PAUSE</button>
+    </div>
+    <span id="loaded"></span>
+    <div>kiválasztott track: <span id="nowplaying"></span></div>
+    <h4>Csatlakozott kliensek száma: <span id="nrclients"></span></h4>
+    <h4>Itt láthatók az üzenetek a szervertől</h4>
+    <div id="net">net messages</div>
+    <h4>Hangfájlok státusza</h4>
+    <div class="row">
+        <div class="block" id="bl0">1</div>
+        <div class="block" id="bl1">2</div>
+        <div class="block" id="bl2">3</div>
+        <div class="block" id="bl3">4</div>
+    </div>
+    <audio id="myaudio" preload="auto" type="audio/x-m4a" preload="auto" src="temp.m4a">
+        Your browser does not support the audio element.
+    </audio>
+    <div id="progress">
+        <div id="bar"></div>
+        <span id="currTime"></span>
+    </div>
+    <div id="startButtons">
+        <button class="full" id="start1" onclick="startClient(0)">1-es csoport</button>
+        <button class="full" id="start2" onclick="startClient(1)">2-es csoport</button>
+        <button class="full" id="start3" onclick="startClient(2)">3-as csoport</button>
+    </div>
+    <div id="exitrow">
+        <button onclick="location.reload()" id="exitButton">EXIT</button>
+    </div>
+</body>
+
+<script>
+    var role = 'control';
+
+    var x = document.getElementById("demo");
+    var watcher = document.getElementById('watcher');
+    var closeTo = document.getElementById('closeTo');
+    var myAudio = document.getElementById('myaudio');
+
+    var state = {
+        'index': -1,
+        'time': 0,
+        'playing': false,
+        'group': -1
+    }
+
+    var stateForLoad = {
+        'index': -1,
+        'time': 0,
+        'playing': false,
+        'group': -1
+    }
+
+    ////////////////////////////////////////////// WebSocket
+    var HOST = location.origin.replace(/^http/, 'ws');
+    var ws;
+    var uniqueId;
+
+    function startClient(groupIndex) {
+        console.log('STARTCLIENT', groupIndex);
+
+        myAudio.play().then(_ => {
+            myAudio.pause();
+            //preparePlayer(0).then(_ => {
+            prepareWebSocket(groupIndex);
+            //console.log(groupIndex);
+            //});
+            console.log('FIRST PLAY trick');
+        });
+
+        document.getElementById('startButtons').remove();
+        //noSleep.enable();
+    }
+
+    function prepareWebSocket(groupIndex) {
+        ws = new WebSocket(HOST);
+        ws.onopen = function (event) {
+            console.log('onopen');
+            state.group = groupIndex;
+            groupText.innerHTML = '' + (groupIndex + 1);
+            uniqueId = getId(handShake)
+            document.getElementById('net').innerHTML = 'websocket connection opened ';
+            keepAlive();
+        }
+
+        ws.onmessage = function (event) {
+            net.innerHTML = event.data;
+            console.log('MESSAGE',event.data);
+            c = JSON.parse(event.data);
+            if (c.clients !== undefined) {
+                nrclients.innerHTML = c.clients;
+                c.ids.map(x => nrclients.innerHTML += '<br>' + x);
+            } else if (c.time !== undefined) {
+                setupSoundState(c);
+            } else if (c.server) {
+                alert('Már van vezérlő ebben a csoportban');
+                window.location.href = "/";
+            }
+        }
+
+        ws.onclose = function (event) {
+            cancelKeepAlive();
+        }
+
+    }
+
+    //////////////////////////////////////////// AUDIO CONTROL
+    function playItC(func, ind = -1) {
+        console.log('playitC', func, ind, state);
+        state.playing = func == 'start';
+        if (ind > -1) {
+            if (state.index != ind) {
+                state.time = 0;
+            }
+            state.index = ind;
+            stateForLoad = state;
+            playIt(func, ind, true).then(_ => {
+                sendStateUpdate();
+            });
+        } else {
+            doPlay(func).then(_ => {
+                sendStateUpdate();
+            });
+        }
+        updateColoredDivs()
+        nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
+    }
+
+    function setupSoundState(c) {
+        console.log('setupSoundState', state, c);
+        //console.log('state after: ', state);
+        updateColoredDivs();
+        preparePlayer(c.index).then(_ => {
+            stateForLoad = {
+                ...c
+            };
+            state = {
+                ...c
+            };
+            //console.log('PREPARED', c);
+            //console.log(state.time, myAudio.currentTime);
+            // EZ ITT NEM ER SEMMIT, MERT MEG NEM TOLTODOTT BE
+            //myAudio.currentTime = state.time;
+            //console.log('PREPARED after', state, myAudio.currentTime);
+            //state.playing = c.playing;
+        });
+    }
+
+    var lastTime = -1;
+
+    function sendStateUpdate(){
+        state.timeStamp = Date.now();
+        ws.send(JSON.stringify(state));
+    }
+
+    function timeUpdate() {
+        //console.log('TIME UPDATE', state, myAudio.currentTime, myAudio.duration);
+        state.time = myAudio.currentTime;
+        //console.log('TIME UPDATE after', state, myAudio.currentTime, myAudio.duration);
+        //sets the percentage
+        bar.style.width = parseInt(((myAudio.currentTime / myAudio.duration) * 100), 10) + "%";
+        // sends current time to server for syncing
+        if (Math.abs(myAudio.currentTime - lastTime) > 2) {
+            sendStateUpdate();
+            lastTime = myAudio.currentTime;
+        }
+        updateTimeText();
+    }
+
+    myAudio.addEventListener('timeupdate', function () {
+        timeUpdate();
+    });
+
+    function updateTimeText() {
+        currTime.innerHTML = '' + myAudio.currentTime.toFixed(2) + '/' + myAudio.duration.toFixed(2);
+    }
+
+    myAudio.addEventListener('progress', ev => {
+        if (state.playing) {
+            doPlay('start');
+        }
+    });
+
+    myAudio.addEventListener("ended", function () {
+        state.time = myAudio.currentTime;
+        sendStateUpdate();
+        lastTime = myAudio.currentTime;
+        setBoxColor(myAudio.index, true);
+        state.playing = false;
+        console.log('ended');
+    });
+
+    progress.addEventListener('click', function (e) {
+        // calculate the normalized position clicked
+        var clickPosition = (e.pageX - this.offsetLeft) / this.offsetWidth;
+        var clickTime = clickPosition * myAudio.duration;
+
+        // move the playhead to the correct position
+        myAudio.currentTime = clickTime;
+        lastTime = clickTime;
+        state.time = clickTime;
+        timeUpdate();
+        sendStateUpdate();
+    });
+</script>
+<script src="sound2.js"></script>
+<script src="common.js"></script>

@@ -10,101 +10,215 @@
 </head>
 
 <body>
-    <h2>Néző</h2>
-    <!--div id="mapid"></div-->
-    <div class="unique">unique id: <span id="unique"></span></div>
-    <div>
+    <h2>Idővonal Néző</h2>
+    <div class="unique hidefirst">unique id: <span id="unique"></span></div>
+    <div class="hidefirst">
         <h3>csoport: <span id="groupText"></span></h3>
-        <button id="clearCookies">hangfájlok törlése</button>
+        <button id="clearCookies" onclick="clearFiles()">hangfájlok törlése</button>
     </div>
-    <span id="loaded"></span>
-    <div>kiválasztott track: <span id="nowplaying"></span></div>
-    <h4>Itt láthatók a parancsok a vezérlőtől</h4>
-    <div id="net">net messages</div>
-    <h4>Hangfájlok státusza</h4>
+    <span id="loaded" class="hidenext"></span>
+    <h2 class="hidenext">Hangfájlok betöltése</h2>
     <div class="row">
         <div class="block" id="bl0">1</div>
         <div class="block" id="bl1">2</div>
         <div class="block" id="bl2">3</div>
         <div class="block" id="bl3">4</div>
     </div>
-    <audio id="myaudio" preload="auto" type="audio/x-m4a" preload="metadata" src="temp.m4a">
+    <audio id="myaudio" preload="auto" type="audio/x-m4a" src="temp.m4a">
         Your browser does not support the audio element.
     </audio>
-    <div id="progress">
-        <div id="bar"></div>
-        <span id="currTime"></span>
-    </div>
-    <div id="startButtons">
+    <div id="startButtons" class="hidefirst">
         <button class="full" id="start1" onclick="startClient(0)">1-es csoport</button>
         <button class="full" id="start2" onclick="startClient(1)">2-es csoport</button>
         <button class="full" id="start3" onclick="startClient(2)">3-as csoport</button>
     </div>
+    <div id="progress">
+        <div id="bar"></div>
+        <span id="currTime"></span>
+    </div>
 </body>
 
 <script>
-    var role = 'client';
+    ////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////1 CHECK FOR STORED FILES, DOWNLOAD THEM IF MISSING
+    var urls = ['IDOVONAL_TRACK1.m4a', 'IDOVONAL_TRACK2.m4a', 'IDOVONAL_TRACK3.m4a', 'IDOVONAL_TRACK4.m4a'];
+    var urlsReady = [false, false, false, false];
+    var noSleep = new NoSleep();
 
-    var x = document.getElementById("demo");
-    var watcher = document.getElementById('watcher');
-    var closeTo = document.getElementById('closeTo');
-    var myAudio = document.getElementById('myaudio');
-
-    var state = {
-        'index': -1,
-        'time': 0,
-        'playing': false,
-        'group': -1
+    function allFilesReady(index) {
+        urlsReady[index] = true;
+        setBoxColor(index);
+        var allTrue = urlsReady.reduce((sum, next) => sum && next, true);
+        ////////////////////////////////// JUMP TO STEP 2
+        if (allTrue) {
+            getId().then(x => {
+                unique.innerHTML = x.toString();
+                uniqueId = x;
+            });
+            var temp = document.getElementsByClassName('hidefirst');
+            var temp2 = document.getElementsByClassName('hidenext');
+            for (let i = 0; i < temp.length; i++) {
+                temp[i].style.visibility = 'visible';
+            }
+            for (let i = 0; i < temp2.length; i++) {
+                temp2[i].style.display = 'none';
+            }
+        }
     }
 
-    var stateForLoad = {
-        'index': -1,
-        'time': 0,
-        'playing': false,
-        'group': -1
+    window.onload = loadAllFiles();
+
+    function loadAllFiles() {
+        for (let i = 0; i < urls.length; i++) {
+            localforage.getItem('soundFile' + i).then(blob => {
+                if (!blob) {
+                    fetch(urls[i])
+                        .then(res => res.blob())
+                        .then(blob => {
+                            localforage.setItem('soundFile' + i, blob)
+                        })
+                        .then(_ => {
+                            loaded.innerHTML += '<br>' + i +
+                                '–newly_stored';
+                            allFilesReady(i);
+                            //setBoxColor(i);
+                        });
+                } else {
+                    loaded.innerHTML += '<br>' + i + '–already_stored';
+                    allFilesReady(i);
+                    //setBoxColor(i);
+                }
+            });
+        }
     }
 
-    ////////////////////////////////////////////// WebSocket
-    var HOST = location.origin.replace(/^http/, 'ws');
-    var ws;
+    function clearFiles() {
+        console.log('clear stored files');
+        for (let i = 0; i < urls.length; i++) {
+            localforage.removeItem('soundFile' + i).then(function () {
+                // Run this code once the key has been removed.
+                console.log('soundFile' + i, 'Key is cleared!');
+            }).catch(function (err) {
+                // This code runs if there were any errors
+                console.log(err);
+            });
+        }
+        localforage.clear();
+    }
+
+    function setBoxColor(ind) {
+        document.getElementById('bl' + ind).style.backgroundColor = 'green';
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////2 CHECK FOR STORED UNIQUE ID, CREATE IT IF MISSING
     var uniqueId;
 
-    function setCoords(coord) {
-        temp = {
-            'latitude': coord.latitude,
-            'longitude': coord.longitude,
+    function getId(func) {
+        var uniq
+        try {
+            return localforage.getItem('unique')
+                .then(blob => {
+                    if (!blob) {
+                        uniq = Date.now();
+                        localforage.setItem('unique', uniq);
+                        //console.log('notexisted', uniq);
+                    } else {
+                        uniq = blob;
+                        //console.log('existed ', blob, uniq);
+                    }
+                    return uniq;
+                });
+        } catch (err) {
+            console.log(err);
         }
-        ws.send(JSON.stringify(temp));
     }
 
-    function startClient(groupIndex) {
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////// 3 START AUDIO AFTER A USER CLICK
+    var myAudio = document.getElementById('myaudio');
+    var groupIndex = -1;
+
+    function startClient(groupIdx) {
         myAudio.play().then(_ => {
             myAudio.pause();
-            prepareWebSocket(groupIndex);
+            startButtons.remove();
+            groupIndex = groupIdx;
+            ///////////////////////////// JUMP TO STEP 4
+            prepareWebSocket();
         });
-
-        noSleep.enable();
-
-        document.getElementById('startButtons').remove();
     }
 
-    function prepareWebSocket(groupIndex) {
+    ////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////4 SETUP WEBSOCKET COMMUNICATION
+    var HOST = location.origin.replace(/^http/, 'ws');
+    var ws;
+    var role = 'client';
+
+    function logIn() {
+        message = {
+            'new': {
+                'type': role,
+                'id': uniqueId,
+                'group': groupIndex
+            }
+        }
+        ws.send(JSON.stringify(message));
+    }
+
+    function keepAlive() {
+        var timeout = 20000;
+        if (ws.readyState == ws.OPEN) {
+            ws.send(JSON.stringify({}));
+        }
+        timerId = setTimeout(keepAlive, timeout);
+    }
+
+    function cancelKeepAlive() {
+        if (timerId) {
+            clearTimeout(timerId);
+        }
+    }
+
+    function keepAlive() {
+        var timeout = 20000;
+        if (ws.readyState == ws.OPEN) {
+            ws.send(JSON.stringify({}));
+        }
+        timerId = setTimeout(keepAlive, timeout);
+    }
+
+    function cancelKeepAlive() {
+        if (timerId) {
+            clearTimeout(timerId);
+        }
+    }
+
+    window.addEventListener('offline', function (event) {
+        console.log("You lost connection.");
+    });
+
+    window.addEventListener('online', function (event) {
+        console.log("You are now back online.");
+        prepareWebSocket();
+    });
+
+    function prepareWebSocket() {
         ws = new WebSocket(HOST);
+
         ws.onopen = function (event) {
-            state.group = groupIndex;
+            //state.group = groupIndex;
             groupText.innerHTML = '' + (groupIndex + 1);
-            uniqueId = getId(handShake)
-            document.getElementById('net').innerHTML = 'websocket connection opened ';
+            logIn();
+            //uniqueId = getId(handShake)
+            //document.getElementById('net').innerHTML = 'websocket connection opened ';
             keepAlive();
         }
 
         ws.onmessage = function (event) {
             c = JSON.parse(event.data);
             console.log('message', c);
-            if (c.time !== undefined) {
-                setupSoundState(c);
-            }
-            net.innerHTML = event.data;
+            handleMessage(c);
         }
 
         ws.onclose = function (event) {
@@ -112,79 +226,131 @@
             cancelKeepAlive();
         }
     }
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////// 5 HANDLE MESSAGES FROM SERVER
+    myAudio.index = -1;
 
-    //////////////////////////////////////////// AUDIO CONTROL
-    function setupSoundState(c) {
-        console.log('setupsoundstate', state, c);
-        if (!c.playing) {
-            doPlay('stop').then(_ => {
-                myAudio.currentTime = c.time;
-                state = c;
-                nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
-                updateColoredDivs();
-            });
-        }
-        if (state.index != c.index) {
-            preparePlayer(c.index).then(_ => {
-                setSpeed(c.time);
-                state = c;
-                stateForLoad = c;
-                if (c.playing) {
-                    doPlay('start').then(_ => {
-                        nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
-                        updateColoredDivs();
-                    });
-                }
-            });
-        } else {
-            if (c.time < myAudio.duration) {
-                setSpeed(c.time);
-                if (state.playing != c.playing) {
-                    var command = c.playing ? 'start' : 'stop';
-                    doPlay(command).then(_ => {
-                        nowplaying.innerHTML = '' + state.index + ' ' + state.playing;
-                        updateColoredDivs();
-                    });
-                }
+    function preparePlayer(ind) {
+        return localforage.getItem('soundFile' + ind).then(blob => {
+            console.log(blob);
+            if (blob) {
+                //console.log('bloooob', URL.createObjectURL(blob));
+                /// THIS FIRES TIMEUPDATE (currentTime = 0)
+                myAudio.setAttribute('src', URL.createObjectURL(blob));
+                myAudio.load();
+                console.log('ind ' + ind);
             }
-        }
+            return 1;
+        });
     }
 
-    function setSpeed(time2) {
-        var diff = time2 - myAudio.currentTime;
-        console.log('diff ', diff);
-        if (Math.abs(diff) > 15) {
-            console.log('so this', time2, myAudio.currentTime, myAudio.duration);
-            myAudio.currentTime = time2;
-            myAudio.playbackRate = 1;
-            console.log('so that', time2, myAudio.currentTime, myAudio.duration);
-        } else if (diff > 1) {
-            myAudio.playbackRate = 1.25;
-        } else if (diff < -1) {
-            myAudio.playbackRate = 0.8;
+    var tempMessage = {};
+
+    function handleMessage(m) {
+        //console.log(m.index, myAudio.index);
+        if (m.index != myAudio.index) {
+            console.log('SWITCH FILE');
+            ////////////////////////////// Switch file
+            preparePlayer(m.index).then(_ => {
+                myAudio.index = m.index;
+                tempMessage = {
+                    ...m
+                };
+                //playPause(m);
+            });
         } else {
-            myAudio.playbackRate = 1;
+            tempMessage = {}
+            playPause(m);
         }
     }
 
-    myAudio.addEventListener('timeupdate', function () {
+    myAudio.oncanplaythrough = function() {
+        console.log('oncanplay', myAudio.duration, tempMessage, tempMessage.time);
+        if (typeof tempMessage.time !== 'undefined' && myAudio.duration > 1) {
+            console.log('ehhh');
+            playPause(tempMessage);
+            tempMessage = {}
+        }
+    }
+
+    /*var allevents = ['canplay', 'canplaythrough', 'loadeddata', 'loadedmetadata', 'seeking', 'seeked', 'timeupdate'];
+
+    allevents.forEach(ev => {
+        myAudio.addEventListener(ev, function () {
+            console.log(ev);
+        })
+    });*/
+
+    //myAudio.oncanplay = anyad;
+    //myAudio.onloadedmetadata = anyad;
+    //myAudio.onloadeddata = anyad;
+
+    //let isIOS = /iPad|iPhone|iPod/.test(navigator.platform) ||
+    //    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+
+    function playPause(m) {
+        var diff = Math.abs(m.time - myAudio.currentTime);
+        //console.log('diff', diff);
+        if (diff > 2 || myAudio.paused) {
+            console.log('TIME ADJUSTMENT', myAudio.duration, m.time);
+            myAudio.currentTime = m.time;
+            if (m.playing) {
+                myAudio.currentTime += (Date.now() - m.timeStamp) / 1000;
+            }
+            //myAudio.currentTime = Math.min(myAudio.currentTime, myAudio.duration);
+        }
+        if (m.playing && !myAudio.ended && myAudio.paused) {
+            myAudio.play();
+        } else if (!m.playing) {
+            myAudio.pause();
+        }
+        updateTimeDisplay();
+        updateColoredDivs();
+    }
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////// FUNCTIONS FOR DISPLAYING
+
+    function updateTimeDisplay() {
         //sets the percentage
         bar.style.width = parseInt(((myAudio.currentTime / myAudio.duration) * 100), 10) + "%";
-        if (myAudio.currTime > state.time)
-            state.time = myAudio.currentTime;
-        updateTimeText();
-    });
-
-    function updateTimeText() {
-        currTime.innerHTML = '' + myAudio.currentTime.toFixed(2) + '/' + myAudio.duration.toFixed(2);
+        currTime.innerHTML = '' + myAudio.currentTime.toFixed(2) + ' / ' + myAudio.duration.toFixed(2);
+        if (myAudio.currentTime >= myAudio.duration) {
+            var elem = document.getElementById('bl' + myAudio.index)
+            elem.style.backgroundColor = 'lightgreen';
+            elem.style.color = 'gray';
+            updateColoredDivs();
+        }
     }
 
-    myAudio.addEventListener("ended", function () {
-        console.log('ENDED');
-        state.playing = false;
-        setBoxColor(myAudio.index, true);
-        console.log('ended');
-    });
+    function updateColoredDivs() {
+        for (let i = 0; i < 4; i++) {
+            temp = ''
+            if (myAudio.index == i) {
+                temp += 'solid 10px' +
+                    (myAudio.paused ? ' gray' : ' black');
+            } else {
+                temp = 'solid 10px var(--bgcolor)';
+            }
+            document.getElementById('bl' + i).style.border = temp;
+        }
+    }
+
+    myAudio.addEventListener('timeupdate', updateTimeDisplay);
+    myAudio.addEventListener('canplay', updateTimeDisplay);
+    myAudio.onended = function () {
+
+    }
+
+    //////////////////// LOCK SCREEN CONTROL DISABLE
+    if (navigator.mediaSession) {
+        navigator.mediaSession.setActionHandler('play', function () {
+            /* Code excerpted. */
+        });
+        navigator.mediaSession.setActionHandler('pause', function () {
+            /* Code excerpted. */
+        });
+        navigator.mediaSession.setActionHandler('stop', function () {
+            /* Code excerpted. */
+        });
+    }
 </script>
-<script src="sound2.js"></script>
-<script src="common.js"></script>

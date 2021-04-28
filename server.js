@@ -56,10 +56,10 @@ wss.on('connection', (ws, req) => {
         if (obj.new) {
             storeNewClient(ws, obj.new);
             var groupIndex = obj.new.group;
-            if (states[groupIndex].controlLeftAt != undefined) {
-                states[groupIndex].time += (Date.now() - states[groupIndex].controlLeftAt) / 1000 + 1;
-                states[groupIndex].controlLeftAt = undefined;
-            }
+            //if (states[groupIndex].controlLeftAt != undefined) {
+                //states[groupIndex].time += (Date.now() - states[groupIndex].controlLeftAt) / 1000;
+                //states[groupIndex].controlLeftAt = undefined;
+            //}
             console.log(states[groupIndex]);
             ws.send(JSON.stringify(states[groupIndex]));
         } else if (obj.time !== undefined) {
@@ -69,6 +69,16 @@ wss.on('connection', (ws, req) => {
             });
         } else if (obj.ended) {
             states[obj.ended.group].playing = false;
+        } else if(obj.controlMessage) {
+            var stt = obj.state;
+            states[stt.group] = stt;
+            nezos[stt.group].forEach(nezo => {
+                nezo.ws.send(JSON.stringify(stt));
+            });
+            controls[stt.group].ws.send(JSON.stringify(stt));
+        }else if(obj.endedMessage){
+            var stt = obj.state;
+            states[stt.group] = stt;
         }
     });
 });
@@ -158,7 +168,7 @@ function removeClientFromAll(ws) {
                 states[groupIndex].group = groupIndex;
             } else if (states[groupIndex].playing == true) {
                 //////////////////// set time when control left its group
-                states[groupIndex].controlLeftAt = Date.now();
+                //states[groupIndex].controlLeftAt = Date.now();
             }
         }
     }
